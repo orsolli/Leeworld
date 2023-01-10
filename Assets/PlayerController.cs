@@ -6,6 +6,8 @@ public class PlayerController : MonoBehaviour
     public float jumpSpeed = 8.0f;
     public float gravity = 20.0f;
     public float mouseSensitivity = 5.0f;
+    public float pitchMin = -80.0f;
+    public float pitchMax = 80.0f;
 
     private Vector3 moveDirection = Vector3.zero;
     private float yaw = 0.0f;
@@ -15,7 +17,7 @@ public class PlayerController : MonoBehaviour
     {
         // Rotate the character based on mouse movement
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * mouseSensitivity, pitchMin, pitchMax);
         transform.eulerAngles = new Vector3(pitch, yaw, 0.0f);
 
         CharacterController controller = GetComponent<CharacterController>();

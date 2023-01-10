@@ -4,15 +4,6 @@ using System.IO;
 using UnityEngine;
 
 
-public static class Vector3Extension
-{
-    // override Vector3.Equals
-    public static bool Equals(this Vector3 self, Vector3 obj)
-    {
-        return obj.x == self.x && obj.y == self.y && obj.z == self.z;
-    }
-}
-
 class OcclusionFilter
 {
     public bool Back;
@@ -66,7 +57,7 @@ public class TerrainGenerator : MonoBehaviour
         string objString = MeshExporter.ToOBJ(mesh);
 
         // Save the .obj file string to a file
-        string filePath = "MyMesh.obj";
+        string filePath = "Cube.obj";
         File.WriteAllText(filePath, objString);
     }
 
@@ -104,12 +95,12 @@ public class TerrainGenerator : MonoBehaviour
                 }
                 if ((x >= 0) && (x < size) && (z >= 0) && (z < size) && !voxelsDrawn[x, 1, z])
                 {
-                    float noise = size * Mathf.PerlinNoise((position.x + x) * 1f / size, (position.z + z) * 1f / size);
+                    float noise = 1.99f;//size * Mathf.PerlinNoise((position.x + x) * 1f / size, (position.z + z) * 1f / size);
                     //noise += size/2f * (Mathf.PerlinNoise((position.x + x) * 2f / size, (position.z + z) * 2f / size)-.5f);
                     //noise += size/4f * (Mathf.PerlinNoise((position.x + x) * 4f / size, (position.z + z) * 4f / size)-.5f);
                     //noise += size / 8f * (Mathf.PerlinNoise((position.x + x) * 8f / size, (position.z + z) * 8f / size) - .5f);
-                    noise += size / 16f * (Mathf.PerlinNoise((position.x + x) * 16f / size, (position.z + z) * 16f / size) - .5f);
-                    for (int y = (int)Mathf.Clamp(noise, 0, size); y > 0; y--)
+                    //noise += size / 16f * (Mathf.PerlinNoise((position.x + x) * 16f / size, (position.z + z) * 16f / size) - .5f);
+                    for (int y = (int)Mathf.Clamp(noise, 0, size); y >= 0; y--)
                     {
                         // Save the voxel
                         voxels[x, y, z] = voxels[x, y, z] || true;

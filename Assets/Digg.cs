@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Extension;
+using UnityEditor;
 using UnityEngine;
 
 public class Digg : MonoBehaviour
@@ -12,6 +13,7 @@ public class Digg : MonoBehaviour
     public LayerMask layerMask;
     private IEnumerator diggingCoroutine;
     public float progress;
+    public int subDivisions = 8;
 
     void Start()
     {
@@ -30,7 +32,7 @@ public class Digg : MonoBehaviour
             // Check if the ray hits a collider on the specified layer
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
             {
-                //previewBlock.enabled = true;
+                previewBlock.SetActive(true);
                 targetTransform = hit.transform;
                 Vector3 gridSize = previewBlock.transform.localScale;
                 // Position the previewBlock at the hit point
@@ -42,7 +44,7 @@ public class Digg : MonoBehaviour
             }
             else
             {
-                //previewBlock.enabled = false;
+                previewBlock.SetActive(false);
             }
         }
 
@@ -51,6 +53,13 @@ public class Digg : MonoBehaviour
             // Start the long-running task
             if (diggingCoroutine == null)
             {
+                //Mesh m = targetTransform.gameObject.GetComponent<MeshFilter>().mesh;
+                //m.SetColors(new List<Color>());
+                //m.SetTangents(new List<Vector4>());
+                //m.SetNormals(new List<Vector3>());
+                //AssetDatabase.CreateAsset(m, "Assets/kube.asset");
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
                 progress = 0;
                 diggingCoroutine = StartDigging();
                 StartCoroutine(diggingCoroutine);
@@ -58,12 +67,16 @@ public class Digg : MonoBehaviour
         }
         else if (Input.GetMouseButtonUp(0))
         {
+            //Mesh m = targetTransform.gameObject.GetComponent<MeshFilter>().mesh;
+            //AssetDatabase.CreateAsset(m, "Assets/kube.asset");
             // Stop the long-running task
             if (diggingCoroutine != null)
             {
                 StopCoroutine(diggingCoroutine);
                 diggingCoroutine = null;
                 progress = 0;
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
         }
         progressBlock.SetLocalPositionAndRotation(progressBlock.localPosition, Quaternion.AngleAxis(90 * progress, Vector3.up));
@@ -86,14 +99,14 @@ public class Digg : MonoBehaviour
         for (int i = 0; i < mlen; i++)
         {
             Vector3 p = mesh.vertices[i];
-            p.x = Mathf.Round(p.x * 8) / 8;
-            p.y = Mathf.Round(p.y * 8) / 8;
-            p.z = Mathf.Round(p.z * 8) / 8;
+            p.x = Mathf.Round(p.x * subDivisions) / subDivisions;
+            p.y = Mathf.Round(p.y * subDivisions) / subDivisions;
+            p.z = Mathf.Round(p.z * subDivisions) / subDivisions;
             var b = new Net3dBool.Point3d((double)p.x, (double)p.y, (double)p.z);
             vertices[i] = b;
             vertexIndexMap.TryAdd(new Vector3((float)b.x, (float)b.y, (float)b.z), i);
             if (UpdateProgress)
-                progress = (float)(i) / (mlen * 4);
+                progress = (float)(i) / (mlen * 5);
         }
         int tlen = mesh.triangles.Length;
         HashSet<int[]> hs = new HashSet<int[]>(new IntArrayEqualityComparer());
@@ -108,7 +121,7 @@ public class Digg : MonoBehaviour
             int[] arr = { newOne, newTwo, newThree };
             hs.Add(arr);
             if (UpdateProgress)
-                progress = (float)(mlen + i) / (mlen * 4);
+                progress = (float)(mlen + i) / (mlen * 5);
         }
 
         int hlen = hs.Count;
@@ -134,7 +147,8 @@ public class Digg : MonoBehaviour
         Vector3 position = previewBlock.transform.position;
         var previewSolid = meshToSolid(previewBlock.GetComponent<MeshFilter>().mesh, false);
         yield return null;
-        previewSolid.scale(previewBlock.transform.localScale.x, previewBlock.transform.localScale.y, previewBlock.transform.localScale.z);
+        float epsilon = 0.0001f;
+        previewSolid.scale(previewBlock.transform.localScale.x + epsilon, previewBlock.transform.localScale.y + epsilon, previewBlock.transform.localScale.z + epsilon);
         previewSolid.translate(position.x, position.y);
         previewSolid.zoom(position.z);
 
@@ -156,6 +170,7 @@ public class Digg : MonoBehaviour
         var meshCollider = targetTransform.gameObject.GetComponent<MeshCollider>();
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = targetTransform.gameObject.GetComponent<MeshFilter>().mesh;
+
     }
 
 }
