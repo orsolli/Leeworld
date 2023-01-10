@@ -149,8 +149,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 192119155}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.495, y: 0.495, z: 0.495}
-  m_LocalScale: {x: 1.1, y: 1.1, z: 1.1}
+  m_LocalPosition: {x: 0.484375, y: 0.484375, z: 0.484375}
+  m_LocalScale: {x: 1.0625, y: 1.0625, z: 1.0625}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 931150935}
@@ -218,6 +218,7 @@ GameObject:
   - component: {fileID: 242061647}
   - component: {fileID: 242061646}
   - component: {fileID: 242061649}
+  - component: {fileID: 242061650}
   m_Layer: 0
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -274,7 +275,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 242061644}
-  m_Mesh: {fileID: 4300000, guid: 8b55903b50bb340b18c035c2ec08515f, type: 2}
+  m_Mesh: {fileID: 4300000, guid: 6ef9b6dd3cf56119f972def761347c4c, type: 2}
 --- !u!4 &242061648
 Transform:
   m_ObjectHideFlags: 0
@@ -284,7 +285,7 @@ Transform:
   m_GameObject: {fileID: 242061644}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 12, y: 12, z: 12}
+  m_LocalScale: {x: 8, y: 8, z: 8}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -303,7 +304,21 @@ MeshCollider:
   serializedVersion: 4
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 8b55903b50bb340b18c035c2ec08515f, type: 2}
+  m_Mesh: {fileID: 4300000, guid: 6ef9b6dd3cf56119f972def761347c4c, type: 2}
+--- !u!114 &242061650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242061644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a05904b062c5ccd718c7de639197d54c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  queue: []
+  workers: []
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -438,7 +453,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 931150931}
-  m_Mesh: {fileID: 4300000, guid: 8b55903b50bb340b18c035c2ec08515f, type: 2}
+  m_Mesh: {fileID: 4300000, guid: 6ef9b6dd3cf56119f972def761347c4c, type: 2}
 --- !u!1 &939047588
 GameObject:
   m_ObjectHideFlags: 0
@@ -678,7 +693,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   progress: 0
-  subDivisions: 12
 --- !u!1 &1745327857
 GameObject:
   m_ObjectHideFlags: 0

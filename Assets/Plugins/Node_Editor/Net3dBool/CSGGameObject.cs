@@ -1,16 +1,16 @@
-﻿using System.Collections;
+﻿using System.Collections.Generic;
 using Net3dBool;
 using UnityEngine;
 
 public class CSGGameObject
 {
 
-    public static IEnumerator GenerateMesh(GameObject go, Material ObjMaterial, Solid mesh)
+    public static IEnumerator<float> GenerateMesh(GameObject go, Material ObjMaterial, Solid mesh)
     {
 
         var verts = mesh.getVertices();
         int mlen = verts.Length;
-        yield return (float)(mlen * 2) / (mlen * 4);
+        yield return 0.9f;
         var colors = mesh.getColors();
         int clen = colors.Length;
 
@@ -24,8 +24,8 @@ public class CSGGameObject
         {
             Net3dBool.Point3d p = verts[i];
             vertices[i] = new Vector3((float)p.x, (float)p.y, (float)p.z);
-            if (i % 5 == 0)
-                yield return (float)(mlen * 2 + i) / (mlen * 4);
+            if (i % 1 == 0)
+                yield return (i) / (mlen + clen);
         }
         tmesh.vertices = vertices;
         tmesh.triangles = mesh.getIndices();
@@ -34,12 +34,12 @@ public class CSGGameObject
         {
             Net3dBool.Color3f c = colors[j];
             clrs[j] = new Color((float)c.r, (float)c.g, (float)c.b);
-            if (j % 5 == 0)
-                yield return (float)(mlen * 3 + j) / (mlen * 4);
+            if (j % 1 == 0)
+                yield return (mlen + j) / (mlen + clen);
         }
         tmesh.colors = clrs;
         tmesh.RecalculateNormals();
-        yield return 1f;
+        yield return 1.05f;
         mf.mesh = tmesh;
 
         MeshRenderer mr = go.GetComponent<MeshRenderer>();
