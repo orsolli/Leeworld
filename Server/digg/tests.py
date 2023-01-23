@@ -36,8 +36,10 @@ f 5//1 7//1 8//1
 
 
 class DiggTestCase(TestCase):
+
     def setUp(self) -> None:
         self.player = models.Player.objects.create(mesh=player_mesh)
+
 
     def test_can_get_block(self):
         c = Client()
@@ -46,8 +48,9 @@ class DiggTestCase(TestCase):
         self.assertEqual(models.Block.objects.count(), 1)
         c.get('/digg/block/?block=1,0,0')
         self.assertEqual(models.Block.objects.count(), 2)
-        #c.get('/digg/block/?block=127,0,0')
-        #self.assertEqual(models.Block.objects.count(), 2, "Player is not that fast")
+        c.get('/digg/block/?block=1,0,0')
+        self.assertEqual(models.Block.objects.count(), 2)
+
 
     def test_can_digg_block(self):
         c = Client()
@@ -57,3 +60,13 @@ class DiggTestCase(TestCase):
         sleep(2)
         c.put(f'/digg/request/?block=0,0,0&position=0,0,0&player={self.player.id}')
         self.assertNotEqual(mesh, models.Block.objects.get(position='0,0,0').mesh)
+
+
+    def test_can_stop_digg(self):
+        c = Client()
+        c.get('/digg/block/?block=0,0,0')
+        mesh = models.Block.objects.get(position='0,0,0').mesh
+        c.put(f'/digg/request/?block=0,0,0&position=0,0,0&player={self.player.id}')
+        c.delete(f'/digg/request/?player={self.player.id}')
+        sleep(2)
+        self.assertEqual(mesh, models.Block.objects.get(position='0,0,0').mesh)

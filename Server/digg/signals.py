@@ -12,36 +12,38 @@ terraformer_signal = Signal()
 
 processes: dict[str, tuple[Queue, Process]] = {}
 
-def terraformer_signal_handler(action: DIGG | STOP, player_id: str, block_position: str, position: str, **kwargs):
+def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
+
     player = models.Player.objects.get(id=player_id)
-    block = models.Block.objects.get(position=block_position)
     if action is DIGG:
+        block_position, position = kwargs.get('block_position'), kwargs.get('position')
+        block = models.Block.objects.get(position=block_position)
         if models.Terraformer.objects.filter(player__id=player_id).exists():
-            if not models.Terraformer.objects.filter(player__id=player_id, block=block).exists():
-                return "Cheat! You are digging another block. STOP your previous digg"
+            if block.position not in processes or not models.Terraformer.objects.filter(player__id=player_id, block=block).exists():
+                action = STOP
 
         elif models.TerraformQueue.objects.filter(player__id=player_id).exists():
             if not models.TerraformQueue.objects.filter(player__id=player_id, block=block).exists():
-                return "Cheat! You are digging another block. STOP your previous digg"
+                action = STOP
 
         else:
             models.TerraformQueue(player=player, block=block, position=position).save()
 
     if action is STOP:
+        models.TerraformQueue.objects.filter(player=player).delete()
+        if not models.Terraformer.objects.filter(player=player).exists():
+            return "Your loss"
         deserter = models.Terraformer.objects.get(player=player)
-        if not deserter:
-            return
         block = deserter.block
-
-        processes[block.position][1].kill()
-        processes[block.position][1].close()
-        processes[block.position][0].close()
-        del processes[block.position]
 
         for worker in models.Terraformer.objects.filter(block=block):
             if worker.player is not player:
-                models.TerraformQueue(player=worker.player, block=worker.block, position=position).save()
+                models.TerraformQueue(player=worker.player, block=worker.block, position=worker.position).save()
             worker.delete()
+
+        processes[block.position][1].kill()
+        processes[block.position][0].close()
+        del processes[block.position]
 
     if block.position not in processes:
         tools = []
@@ -65,5 +67,6 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, block_positi
         processes[block.position][1].close()
         processes[block.position][0].close()
         del processes[block.position]
+        return "Done"
     except Empty:
-        pass
+        return "Waiting"

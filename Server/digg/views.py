@@ -1,4 +1,6 @@
+from time import sleep
 from django.http import HttpResponse, HttpRequest
+from django.views.decorators.csrf import csrf_exempt
 from . import models, signals
 
 
@@ -41,26 +43,42 @@ def get_block(request: HttpRequest):
     )
     return HttpResponse(block.mesh, status=201 if created else 200)
 
-
+@csrf_exempt
 def request_digg_block(request: HttpRequest):
-    block_position = request.GET['block']
-    if not models.Block.objects.filter(position=block_position).exists():
-        return HttpResponse("Block not found")
 
     player_id = request.GET['player']
     if not models.Player.objects.filter(id=player_id).exists():
         return HttpResponse("Player not found")
+
+    if request.method == 'DELETE':
+        results = signals.terraformer_signal.send(
+            sender=None,
+            action=signals.STOP,
+            player_id=player_id,
+        )
+        for receiver, response in results:
+            if receiver == signals.terraformer_signal_handler:
+                return HttpResponse(response, status=200)
+
+    block_position = request.GET['block']
+    if not models.Block.objects.filter(position=block_position).exists():
+        return HttpResponse("Block not found")
 
     position = request.GET['position']
     if not position.count(',') == 2:
         return HttpResponse("Position must be three numbers separated by comma (x,y,z)")
 
     # Start digging process
-    signals.terraformer_signal.send(
+    results = signals.terraformer_signal.send(
         sender=None,
         action=signals.DIGG,
         player_id=player_id,
         block_position=block_position,
         position=position,
     )
-    return HttpResponse("")
+    for receiver, response in results:
+        if receiver == signals.terraformer_signal_handler:
+            #status = {"Waiting": 202, "Done": 201}.get(response, 400)
+            if response == "Waiting":
+                sleep(1)
+            return HttpResponse(response)
