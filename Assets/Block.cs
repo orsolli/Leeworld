@@ -20,11 +20,19 @@ public class Block : MonoBehaviour
         var req = new UnityWebRequest($"http://127.0.0.1:8000/digg/block/?player=1&block={block_id}");
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SendWebRequest();
-        while (!req.isDone || !req.downloadHandler.isDone) await Task.Delay(10);
+        while (!req.isDone) await Task.Delay(10);
         if ((int)(req.responseCode / 100) == 2)
         {
+            while (!req.downloadHandler.isDone) await Task.Delay(10);
             meshFilter.mesh = MeshParser.ParseOBJ(req.downloadHandler.text);
             meshCollider.sharedMesh = meshFilter.mesh;
+        }
+        else
+        {
+            Debug.LogError("Could not load block. Trying again in one second");
+            await Task.Delay(1000);
+            if (this != null)
+                Start();
         }
     }
 
