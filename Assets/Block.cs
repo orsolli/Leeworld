@@ -19,9 +19,12 @@ public class Block : MonoBehaviour
         var req = new UnityWebRequest($"http://127.0.0.1:8000/digg/block/?player=1&block={block_id}");
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SendWebRequest();
-        while (!req.isDone) await Task.Delay(10);
-        meshFilter.mesh = MeshParser.ParseOBJ(req.downloadHandler.text);
-        meshCollider.sharedMesh = meshFilter.mesh;
+        while (!req.isDone || !req.downloadHandler.isDone) await Task.Delay(10);
+        if ((int)(req.responseCode / 100) == 2)
+        {
+            meshFilter.mesh = MeshParser.ParseOBJ(req.downloadHandler.text);
+            meshCollider.sharedMesh = meshFilter.mesh;
+        }
     }
 
     private string ToUInt8(float f)

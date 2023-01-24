@@ -16,12 +16,12 @@ public class ChunkSpawner : MonoBehaviour
     void Start()
     {
         chunks = new GameObject[worldSize, worldSize];
-        chunkSize = chunkPrefab.GetComponent<TerrainGenerator>().terrainSize;
+        chunkSize = (int)chunkPrefab.transform.localScale.x;
     }
 
     void Update()
     {
-        chunkSize = chunkPrefab.GetComponent<TerrainGenerator>().terrainSize;
+        chunkSize = (int)chunkPrefab.transform.localScale.x;
         var pos = target.transform.position;
         {
             var mem = (int)Mathf.Sqrt(memory);
