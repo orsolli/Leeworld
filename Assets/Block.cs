@@ -10,6 +10,7 @@ public class Block : MonoBehaviour
     private MeshFilter meshFilter;
     private DateTime? startTime;
     private string block_id;
+    private bool stop;
 
     async void Start()
     {
@@ -51,7 +52,7 @@ public class Block : MonoBehaviour
         string position = $"{ToUInt8(previewPos.x)},{ToUInt8(previewPos.y)},{ToUInt8(previewPos.z)}";
         UnityWebRequest req;
         string text = "Waiting";
-        while (text.Equals("Waiting"))
+        while (!text.Equals("Done"))
         {
             req = new UnityWebRequest($"http://127.0.0.1:8000/digg/request/?player={player}&block={block_id}&position={position}", "PUT");
             req.downloadHandler = new DownloadHandlerBuffer();
@@ -60,8 +61,14 @@ public class Block : MonoBehaviour
                 yield return Progress(0.5f);
 
             text = req.downloadHandler.text;
+
+            if (stop)
+            {
+                new UnityWebRequest($"http://127.0.0.1:8000/digg/request/?player={player}", "DELETE").SendWebRequest();
+                stop = false;
+                yield break;
+            }
         }
-        Debug.Log(text);
 
         req = new UnityWebRequest($"http://127.0.0.1:8000/digg/block/?player={player}&block={block_id}");
         req.downloadHandler = new DownloadHandlerBuffer();
@@ -78,12 +85,9 @@ public class Block : MonoBehaviour
         yield return 1;
     }
 
-    public void StopDigg(Transform previewBlock)
+    public void StopDigg()
     {
-        startTime = null;
-        var req = new UnityWebRequest($"http://127.0.0.1:8000/digg/request/?player=1", "DELETE");
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SendWebRequest();
+        stop = true;
     }
 
 }

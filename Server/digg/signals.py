@@ -19,11 +19,11 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
         block_position, position = kwargs.get('block_position'), kwargs.get('position')
         block = models.Block.objects.get(position=block_position)
         if models.Terraformer.objects.filter(player__id=player_id).exists():
-            if block.position not in processes or not models.Terraformer.objects.filter(player__id=player_id, block=block).exists():
+            if block.position not in processes or not models.Terraformer.objects.filter(player__id=player_id, block=block, position=position).exists():
                 action = STOP
 
         elif models.TerraformQueue.objects.filter(player__id=player_id).exists():
-            if not models.TerraformQueue.objects.filter(player__id=player_id, block=block).exists():
+            if not models.TerraformQueue.objects.filter(player__id=player_id, block=block, position=position).exists():
                 action = STOP
 
         else:
@@ -37,7 +37,7 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
         block = deserter.block
 
         for worker in models.Terraformer.objects.filter(block=block):
-            if worker.player is not player:
+            if worker.player != player:
                 models.TerraformQueue(player=worker.player, block=worker.block, position=worker.position).save()
             worker.delete()
 
@@ -48,6 +48,8 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
     if block.position not in processes:
         tools = []
         workers = models.TerraformQueue.objects.filter(block=block)
+        if not workers.exists():
+            return "Go home"
         for worker in workers:
             tools.append((worker.player.mesh, worker.position))
             models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
