@@ -29,8 +29,9 @@ public class Block : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Could not load block. Trying again in one second");
-            await Task.Delay(1000);
+            var seconds = UnityEngine.Random.Range(1, 1 + (int)Time.realtimeSinceStartup);
+            Debug.LogError($"Could not load block. Trying again in {seconds} second");
+            await Task.Delay(1000 * seconds);
             if (this != null)
                 Start();
         }
