@@ -11,13 +11,15 @@ public class Block : MonoBehaviour
     private DateTime? startTime;
     private string block_id;
     private bool stop;
+    private Server server;
 
     async void Start()
     {
+        server = FindObjectOfType<Server>(true);
         meshCollider = GetComponent<MeshCollider>();
         meshFilter = GetComponent<MeshFilter>();
         block_id = $"{transform.position.x / 8},{transform.position.y / 8},{transform.position.z / 8}";
-        var req = new UnityWebRequest($"http://127.0.0.1:8000/digg/block/?player=1&block={block_id}");
+        var req = new UnityWebRequest($"http://{server.host}/digg/block/?player={server.player}&block={block_id}");
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SendWebRequest();
         while (!req.isDone) await Task.Delay(10);
@@ -54,7 +56,7 @@ public class Block : MonoBehaviour
         return (float)(DateTime.UtcNow - startTime)?.TotalSeconds / 10 % duration;
     }
 
-    public IEnumerator<float> Digg(Transform previewBlock, int player)
+    public IEnumerator<float> Digg(Transform previewBlock)
     {
         startTime = DateTime.UtcNow;
         Vector3 previewPos = previewBlock.position - transform.position;
@@ -63,7 +65,7 @@ public class Block : MonoBehaviour
         string text = "Waiting";
         while (!text.Equals("Done"))
         {
-            req = new UnityWebRequest($"http://127.0.0.1:8000/digg/request/?player={player}&block={block_id}&position={position}", "PUT");
+            req = new UnityWebRequest($"http://{server.host}/digg/request/?player={server.player}&block={block_id}&position={position}", "PUT");
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SendWebRequest();
             while (!req.isDone)
@@ -73,13 +75,13 @@ public class Block : MonoBehaviour
 
             if (stop)
             {
-                new UnityWebRequest($"http://127.0.0.1:8000/digg/request/?player={player}", "DELETE").SendWebRequest();
+                new UnityWebRequest($"http://{server.host}/digg/request/?player={server.player}", "DELETE").SendWebRequest();
                 stop = false;
                 yield break;
             }
         }
 
-        req = new UnityWebRequest($"http://127.0.0.1:8000/digg/block/?player={player}&block={block_id}");
+        req = new UnityWebRequest($"http://{server.host}/digg/block/?player={server.player}&block={block_id}");
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SendWebRequest();
 

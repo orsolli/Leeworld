@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Digg : MonoBehaviour
 {
-    public int player = 1;
     public Vector3 offset;
     public GameObject previewBlock;
     public Transform progressBlock;
@@ -14,19 +13,13 @@ public class Digg : MonoBehaviour
     [ReadOnly(true)] public float progress;
     private Block block;
 
-    void Start()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-    }
-
     void Update()
     {
         if (diggingCoroutine == null && MovePreviewBlock() && Input.GetMouseButtonDown(0))
         {
             progress = 0;
             block = targetTransform.GetComponent<Block>();
-            diggingCoroutine = block.Digg(previewBlock.transform, player);
+            diggingCoroutine = block.Digg(previewBlock.transform);
         }
         else if (Input.GetMouseButtonUp(0))
         {

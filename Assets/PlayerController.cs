@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -13,8 +14,18 @@ public class PlayerController : MonoBehaviour
     private float yaw = 0.0f;
     private float pitch = 0.0f;
 
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            SceneManager.LoadScene("MainMenu");
+        }
         // Rotate the character based on mouse movement
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
         pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * mouseSensitivity, pitchMin, pitchMax);
