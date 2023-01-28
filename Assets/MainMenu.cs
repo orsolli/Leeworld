@@ -9,6 +9,8 @@ public class MainMenu : MonoBehaviour
 
     void Start()
     {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         ServerInputField.text = PlayerPrefs.GetString("SERVER");
         PythonInputField.text = PlayerPrefs.GetString("PYTHON_PATH"); //"/home/orsolli/.local/share/virtualenvs/Server-74Jy8cNt/bin");
         PlayerInputField.text = PlayerPrefs.GetString("PLAYER");

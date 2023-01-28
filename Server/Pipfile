@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 pycsg = "*"
+channels = {extras = ["daphne"], version = "*"}
 
 [dev-packages]
 

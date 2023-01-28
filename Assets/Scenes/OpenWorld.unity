@@ -570,7 +570,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2deb1faec3b412da1ac5466359acd5ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: 1
   offset: {x: 0, y: 0, z: 0}
   previewBlock: {fileID: 931150931}
   progressBlock: {fileID: 192119156}

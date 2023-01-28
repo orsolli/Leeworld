@@ -37,9 +37,12 @@ f 5//1 7//1 8//1
 
 
 def get_block(request: HttpRequest):
+    block_id = request.GET['block']
+    if not block_id.count('_') == 2:
+        return HttpResponse("block must be three numbers separated by underscore (x_y_z)")
     block, created = models.Block.objects.get_or_create(
         defaults={'mesh':cube},
-        position=request.GET['block']
+        position=block_id.replace('_', ',')
     )
     return HttpResponse(block.mesh, status=201 if created else 200)
 
@@ -61,12 +64,17 @@ def request_digg_block(request: HttpRequest):
                 return HttpResponse(response, status=200)
 
     block_position = request.GET['block']
+    if not block_position.count('_') == 2:
+        return HttpResponse("block must be three numbers separated by underscore (x_y_z)")
+    block_position = block_position.replace('_', ',')
+
     if not models.Block.objects.filter(position=block_position).exists():
         return HttpResponse("Block not found")
 
     position = request.GET['position']
-    if not position.count(',') == 2:
-        return HttpResponse("Position must be three numbers separated by comma (x,y,z)")
+    if not position.count('_') == 2:
+        return HttpResponse("Position must be three numbers separated by underscore (x_y_z)")
+    position = position.replace('_', ',')
 
     # Start digging process
     results = signals.terraformer_signal.send(

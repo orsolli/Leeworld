@@ -9,8 +9,8 @@ public class Server : MonoBehaviour
 
     void Start()
     {
-        player = PlayerPrefs.GetString("PLAYER");
-        host = PlayerPrefs.GetString("SERVER");
+        player = PlayerPrefs.GetString("PLAYER") ?? player;
+        host = PlayerPrefs.GetString("SERVER") ?? host;
         if (host == null || host == "")
         {
             string relativePath = "";
@@ -54,6 +54,7 @@ public class Server : MonoBehaviour
 
     void Destroy()
     {
-        process.CloseMainWindow();
+        if (process != null)
+            process.CloseMainWindow();
     }
 }
