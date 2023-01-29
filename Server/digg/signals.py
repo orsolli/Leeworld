@@ -12,7 +12,7 @@ terraformer_signal = Signal()
 
 processes: dict[str, tuple[Queue, Process]] = {}
 
-def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
+def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs) -> list[int]:
 
     player = models.Player.objects.get(id=player_id)
     if action is DIGG:
@@ -32,13 +32,18 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
     if action is STOP:
         models.TerraformQueue.objects.filter(player=player).delete()
         if not models.Terraformer.objects.filter(player=player).exists():
-            return "Your loss"
+            print(f"{player_id} gave up the queue")
+            return []
         deserter = models.Terraformer.objects.get(player=player)
         block = deserter.block
 
-        for worker in models.Terraformer.objects.filter(block=block):
+        workers = models.Terraformer.objects.filter(block=block)
+        trofast = f"{[p.player.id for p in workers]}"
+        for worker in workers:
             if worker.player != player:
                 models.TerraformQueue(player=worker.player, block=worker.block, position=worker.position).save()
+            else:
+                print(f"{player_id} ruined it for {trofast}")
             worker.delete()
 
         processes[block.position][1].kill()
@@ -49,7 +54,8 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
         tools = []
         workers = models.TerraformQueue.objects.filter(block=block)
         if not workers.exists():
-            return "Go home"
+            return []
+        print(f"Go! {[p.player.id for p in workers]}")
         for worker in workers:
             tools.append((worker.player.mesh, worker.position))
             models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
@@ -64,11 +70,14 @@ def terraformer_signal_handler(action: DIGG | STOP, player_id: str, **kwargs):
         block = models.Block.objects.get(position=block_position)
         block.mesh = mesh
         block.save()
-        models.Terraformer.objects.filter(block=block).delete()
+        workers = models.Terraformer.objects.filter(block=block)
+        finishers = [p.player.id for p in workers]
+        print(f"{player_id} finished the work for {finishers}")
+        workers.delete()
         processes[block.position][1].join()
         processes[block.position][1].close()
         processes[block.position][0].close()
         del processes[block.position]
-        return "Done"
+        return finishers
     except Empty:
-        return "Waiting"
+        return []

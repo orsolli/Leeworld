@@ -93,17 +93,22 @@ public class Block : MonoBehaviour
         Debug.Log(res);
         if (res.Equals("Waiting"))
             progress = Progress(1);
-        if (res.Equals("Done"))
+        else if (res.Equals("Done"))
         {
-            stop = true;
+            StopDigg();
             dirty = true;
             progress = 1;
+        }
+        else if (res.Equals("Dirty"))
+        {
+            dirty = true;
         }
     }
 
     IEnumerator<int> UpdateMesh()
     {
         bussy = true;
+        dirty = false;
         UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.host}/digg/block/?player={server.player}&block={block_id}");
         meshRequest.downloadHandler = new DownloadHandlerBuffer();
         meshRequest.useHttpContinue = false;
@@ -116,7 +121,6 @@ public class Block : MonoBehaviour
             while (!meshRequest.downloadHandler.isDone) yield return 0;
             meshFilter.mesh = MeshParser.ParseOBJ(meshRequest.downloadHandler.text);
             meshCollider.sharedMesh = meshFilter.mesh;
-            dirty = false;
         }
         else
         {

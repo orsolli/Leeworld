@@ -1,5 +1,5 @@
 from multiprocessing import Queue
-from time import sleep
+from time import sleep, monotonic
 from csg.core import CSG
 from csg.geom import Polygon, Vertex, Vector
 
@@ -11,7 +11,7 @@ def intersect(id: str, mesh: str, players: tuple[str, str], queue: Queue):
     position = x,y,z
     x = 10 => 0, 11 => 0 + 1/8, 27 => 1 + 7/8, 87 => 7 + 7/8, 101 => 0 + 1/64, 111 => 0 + 1/8 + 1/64
     """
-
+    start_time = monotonic()
     a = CSG.fromPolygons(parseOBJ(mesh))
     for player_mesh, position in players:
         a = a - CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
@@ -51,8 +51,10 @@ vn 0 0 -1
 
             new_ground += '\n'
             j = k
-
+    used_time = monotonic() - start_time
+    sleep(max(0, 5 - used_time)) # Add consistent time
     queue.put((id, new_ground), timeout=10)
+    print(f"Terraformed in {used_time}")
 
 
 def parseOBJ(mesh: str, translate: Vector = Vector(0,0,0)):
