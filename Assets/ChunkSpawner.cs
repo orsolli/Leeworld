@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ChunkSpawner : MonoBehaviour
@@ -7,21 +5,13 @@ public class ChunkSpawner : MonoBehaviour
     public GameObject target;
     public GameObject chunkPrefab;
     public int memory = 32;
-    public int worldSize = 255;
-    private int chunkSize;
+    public static int worldSize = 255;
 
-    private GameObject[,] chunks;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        chunks = new GameObject[worldSize, worldSize];
-        chunkSize = (int)chunkPrefab.transform.localScale.x;
-    }
+    private GameObject[,] chunks = new GameObject[worldSize, worldSize];
 
     void Update()
     {
-        chunkSize = (int)chunkPrefab.transform.localScale.x;
+        var chunkSize = (int)chunkPrefab.transform.localScale.x;
         var pos = target.transform.position;
         {
             var mem = (int)Mathf.Sqrt(memory);

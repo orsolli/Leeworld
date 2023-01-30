@@ -3,9 +3,18 @@ using UnityEngine;
 
 public class Server : MonoBehaviour
 {
-    public string player;
-    public string host;
+    private string player;
+    private string host;
     System.Diagnostics.Process process;
+
+    public string GetPlayer()
+    {
+        return PlayerPrefs.GetString("PLAYER") ?? player;
+    }
+    public string GetHost()
+    {
+        return PlayerPrefs.GetString("SERVER") ?? host;
+    }
 
     void Start()
     {

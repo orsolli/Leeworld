@@ -55,11 +55,10 @@ public class Block : MonoBehaviour
 
     private void Connect()
     {
-        Debug.Log("Connecting");
         if (!destroy)
         {
             client = SimpleWebClient.Create(2048, 64, new TcpConfig(true, 30000, 30000));
-            client.Connect(new Uri($"ws://{server.host}/ws/block/{block_id}/"));
+            client.Connect(new Uri($"ws://{server.GetHost()}/ws/block/{block_id}/"));
             client.onData += Receive;
             client.onDisconnect += Connect;
         }
@@ -73,7 +72,7 @@ public class Block : MonoBehaviour
         string position = $"{ToUInt8(previewPos.x)}_{ToUInt8(previewPos.y)}_{ToUInt8(previewPos.z)}";
         while (!stop)
         {
-            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.player}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}")));
+            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}")));
             client.ProcessMessageQueue();
             yield return progress;
         }
@@ -84,7 +83,7 @@ public class Block : MonoBehaviour
     public void StopDigg()
     {
         stop = true;
-        client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.player}\"}}")));
+        client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}")));
     }
 
     void Receive(ArraySegment<byte> data)
@@ -109,7 +108,7 @@ public class Block : MonoBehaviour
     {
         bussy = true;
         dirty = false;
-        UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.host}/digg/block/?player={server.player}&block={block_id}");
+        UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
         meshRequest.downloadHandler = new DownloadHandlerBuffer();
         meshRequest.useHttpContinue = false;
         meshRequest.redirectLimit = 0;
@@ -134,10 +133,14 @@ public class Block : MonoBehaviour
         string res = "";
         int i = (int)f;
         while (f > (int)f && res.Length < 3)
+        {
             i = (int)f;
-        res = $"{res}{i}";
-        f -= i;
-        f *= 8;
+            res = $"{res}{i}";
+            f -= i;
+            f *= 8;
+        }
+        if (res.Length == 0)
+            return "0";
         return res;
     }
 
