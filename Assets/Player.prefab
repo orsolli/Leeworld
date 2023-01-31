@@ -97,8 +97,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69aac7ae8e5908688a2c2d7fc17c5d64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cursorPosition: {x: 0, y: 0, z: 0}
-  cursor: {fileID: 3398520153181603658, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}
+  cursorPrefab: {fileID: 3398520153181603658, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}
   action: 
 --- !u!108 &8575918078211271930
 Light:

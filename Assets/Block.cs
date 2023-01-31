@@ -132,7 +132,7 @@ public class Block : MonoBehaviour
     {
         string res = "";
         int i = (int)f;
-        while (f > (int)f && res.Length < 3)
+        while (f >= (int)f && res.Length < 3)
         {
             i = (int)f;
             res = $"{res}{i}";

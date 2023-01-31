@@ -83,16 +83,22 @@ class PlayerConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_send)(
+            self.players_group, {"type": "player_disconnect", "player": self.player_id}
+        )
         async_to_sync(self.channel_layer.group_discard)(
             self.players_group, self.channel_name
         )
 
     def receive(self, bytes_data):
         text_data_json = json.loads(bytes_data)
-        self.block = text_data_json['block']
+        part = text_data_json['part']
+        block = text_data_json['block']
+        if part == 'player':
+            self.block = block
         position = text_data_json['position']
         async_to_sync(self.channel_layer.group_send)(
-            self.players_group, {"type": "player_position", "player": self.player_id, "block": self.block, "position": position}
+            self.players_group, {"type": f"{part}_position", "player": self.player_id, "block": block, "position": position}
         )
 
     # Receive position from player group
@@ -102,6 +108,28 @@ class PlayerConsumer(JsonWebsocketConsumer):
         position = event["position"]
         if self.player_id != player and self.nearby(block):
             self.send(bytes_data=bytes(f'pos:{player}:{block}:{position}', 'utf8'))
+
+    # Receive position from cursors group
+    def cursor_position(self, event):
+        player = event["player"]
+        block = event["block"]
+        position = event["position"]
+        if self.player_id != player and self.nearby(block):
+            self.send(bytes_data=bytes(f'cur:{player}:{block}:{position}', 'utf8'))
+
+    # Receive action from block group
+    def cursor_action(self, event):
+        player = event["player"]
+        action = event["action"]
+        block = event["action"]
+        if self.player_id != player and (block is None or self.nearby(block)):
+            self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
+
+    # Receive disconnect from block group
+    def player_disconnect(self, event):
+        player = event["player"]
+        if self.player_id != player:
+            self.send(bytes_data=bytes(f'off:{player}', 'utf8'))
 
     def nearby(self, block: str):
         if self.block is None:
@@ -119,62 +147,3 @@ class PlayerConsumer(JsonWebsocketConsumer):
             relative_position[2]**2,
         ])
         return distance_sqared < 36
-
-
-class CursorConsumer(JsonWebsocketConsumer):
-    def connect(self):
-        self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
-        self.cursors_group = "cursors"
-        self.block = None
-
-        async_to_sync(self.channel_layer.group_add)(
-            self.cursors_group, self.channel_name
-        )
-
-        self.accept()
-
-    def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_discard)(
-            self.cursors_group, self.channel_name
-        )
-
-    def receive(self, bytes_data):
-        text_data_json = json.loads(bytes_data)
-        self.block = text_data_json['block']
-        position = text_data_json['position']
-        async_to_sync(self.channel_layer.group_send)(
-            self.cursors_group, {"type": "cursor_position", "player": self.player_id, "block": self.block, "position": position}
-        )
-
-    # Receive position from cursors group
-    def cursor_position(self, event):
-        player = event["player"]
-        block = event["block"]
-        position = event["position"]
-        if self.player_id != player and self.nearby(block):
-            self.send(bytes_data=bytes(f'pos:{player}:{block}:{position}', 'utf8'))
-
-    # Receive action from block group
-    def cursor_action(self, event):
-        player = event["player"]
-        action = event["action"]
-        block = event["action"]
-        if self.player_id != player and (block is None or self.nearby(block)):
-            self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
-
-    def nearby(self, block: str):
-        if self.block is None:
-            return False
-        position_a = block.split('_')
-        position_b = self.block.split('_')
-        relative_position = [
-            int(position_a[0]) - int(position_b[0]),
-            int(position_a[1]) - int(position_b[1]),
-            int(position_a[2]) - int(position_b[2]),
-        ]
-        distance_sqared = sum([
-            relative_position[0]**2,
-            relative_position[1]**2,
-            relative_position[2]**2,
-        ])
-        return distance_sqared < 16

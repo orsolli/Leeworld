@@ -7,10 +7,12 @@ using UnityEngine;
 public class NetworkManager : MonoBehaviour
 {
     public OtherPlayer playerPrefab;
+    public GameObject cursorTransform;
     private Server server;
     private SimpleWebClient client;
     private Dictionary<string, OtherPlayer> otherPlayers = new Dictionary<string, OtherPlayer>();
     private string lastPositionReport = "";
+    private string lastCursorReport = "";
 
     void Start()
     {
@@ -26,16 +28,30 @@ public class NetworkManager : MonoBehaviour
 
     void Update()
     {
-        var pos = transform.position;
+        var position = GetUpdate(transform.position);
+        if (!lastPositionReport.Equals(position))
+        {
+            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes(
+                $"{{\"part\":\"player\",\"block\":\"{position.Split('|')[0]}\",\"position\":\"{position.Split('|')[1]}\"}}"
+            )));
+            lastPositionReport = position;
+        }
+
+        var cursor = GetUpdate(cursorTransform.transform.position);
+        if (!lastCursorReport.Equals(cursor))
+        {
+            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes(
+                $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
+            )));
+            lastCursorReport = cursor;
+        }
+    }
+    private string GetUpdate(Vector3 pos)
+    {
         var block_pos = pos / 8;
         var block = $"{(int)block_pos.x}_{(int)block_pos.y}_{(int)block_pos.z}";
         var position = $"{ToUInt8(pos.x % 8)}_{ToUInt8(pos.y % 8)}_{ToUInt8(pos.z % 8)}";
-        var positionReport = $"{position}|{block}";
-        if (!lastPositionReport.Equals(positionReport))
-        {
-            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"player\":\"{server.GetPlayer()}\",\"block\":\"{block}\",\"position\":\"{position}\"}}")));
-            lastPositionReport = positionReport;
-        }
+        return $"{block}|{position}";
     }
 
     IEnumerator<int> ProcessMessages()
@@ -80,6 +96,20 @@ public class NetworkManager : MonoBehaviour
             {
                 otherPlayer = GameObject.Instantiate(playerPrefab, position, Quaternion.identity);
                 otherPlayers.Add(player, otherPlayer);
+                lastPositionReport = "";
+                lastCursorReport = "";
+            }
+        }
+        else if (res.StartsWith("cur:"))
+        {
+            var parts = res.Split(":");
+            var player = parts[1];
+            OtherPlayer otherPlayer;
+            if (otherPlayers.TryGetValue(player, out otherPlayer))
+            {
+                var block = parts[2].Split('_');
+                var position = FromUInt8Vector(parts[3]) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
+                otherPlayer.GetCursor().position = position;
             }
         }
         else if (res.StartsWith("act:"))
@@ -91,6 +121,17 @@ public class NetworkManager : MonoBehaviour
             if (otherPlayers.TryGetValue(player, out otherPlayer))
             {
                 otherPlayer.action = act;
+            }
+        }
+        else if (res.StartsWith("off:"))
+        {
+            var parts = res.Split(":");
+            var player = parts[1];
+            OtherPlayer otherPlayer;
+            if (otherPlayers.TryGetValue(player, out otherPlayer))
+            {
+                Destroy(otherPlayer);
+                otherPlayers.Remove(player);
             }
         }
     }
@@ -122,7 +163,7 @@ public class NetworkManager : MonoBehaviour
     {
         string res = "";
         int i = (int)f;
-        while (f > (int)f && res.Length < 3)
+        while (f >= (int)f && f > 0 && res.Length < 3)
         {
             i = (int)f;
             res = $"{res}{i}";

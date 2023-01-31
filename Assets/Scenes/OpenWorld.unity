@@ -540,6 +540,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 4750821318648959531, guid: c17c92aeb71be5b73afcfaaac662c0c7, type: 3}
+  cursorTransform: {fileID: 931150931}
 --- !u!1 &2059282660
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,8 +570,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbbaf53fc057a984a820868eabe21e9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: 
-  host: 
 --- !u!4 &2059282662
 Transform:
   m_ObjectHideFlags: 0
