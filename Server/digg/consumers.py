@@ -8,9 +8,10 @@ from . import signals
 
 class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
-        self.block_id = self.scope["url_route"]["kwargs"]["block_id"]
-        self.block_group_name = "block_%s" % self.block_id
-        self.player_id = None
+        self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
+        self.block_group_name = "blocks"
+        self.block = None
+        self.duration = None
 
         async_to_sync(self.channel_layer.group_add)(
             self.block_group_name, self.channel_name
@@ -19,6 +20,12 @@ class BlockConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
+        self.duration = None
+        signals.terraformer_signal.send(
+            sender=None,
+            action=signals.STOP,
+            player_id=self.player_id,
+        )
         async_to_sync(self.channel_layer.group_discard)(
             self.block_group_name, self.channel_name
         )
@@ -29,6 +36,7 @@ class BlockConsumer(JsonWebsocketConsumer):
         self.player_id=text_data_json['player']
         block = None
         if action == 'stop':
+            self.duration = None
             signals.terraformer_signal.send(
                 sender=None,
                 action=signals.STOP,
@@ -39,25 +47,29 @@ class BlockConsumer(JsonWebsocketConsumer):
             position = text_data_json['position']
             results = signals.terraformer_signal.send(
                 sender=None,
-                action=signals.DIGG,
+                action=signals.DIGG if self.duration is None else signals.PING,
                 player_id=self.player_id,
                 block_position=block.replace('_', ','),
                 position=position.replace('_', ','),
             )
-            async_to_sync(self.channel_layer.group_send)(
-                "cursors", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
-            )
             for receiver, response in results:
                 if receiver == signals.terraformer_signal_handler:
-                    finishers = response
+                    done, finishers, time = response
                     break
-            if int(self.player_id) not in finishers:
-                self.send(bytes_data=b'Waiting')
-            if len(finishers):
+            if self.duration is None:
+                self.duration = 5 if int(self.player_id) in finishers else 5 + (5 - time)
+                async_to_sync(self.channel_layer.group_send)(
+                    "cursors", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
+                )
+            if done:
                 async_to_sync(self.channel_layer.group_send)(
                     self.block_group_name, {"type": "block_message", "finishers": finishers}
                 )
-        
+            elif int(self.player_id) in finishers:
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 - time) / self.duration))}', 'utf8'))
+            elif int(self.player_id) not in finishers:
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 + (5 - time)) / self.duration))}', 'utf8'))
+
         async_to_sync(self.channel_layer.group_send)(
             "cursors", {"type": "cursor_action", "player": self.player_id, "action": action, "block": block}
         )
@@ -65,10 +77,9 @@ class BlockConsumer(JsonWebsocketConsumer):
     # Receive message from block group
     def block_message(self, event):
         finishers: list[int] = event["finishers"]
-        if self.player_id and int(self.player_id) in finishers:
-            self.send(bytes_data=bytes('Done', 'utf8'))
-        else:
-            self.send(bytes_data=bytes('Dirty', 'utf8'))
+        self.send(bytes_data=bytes(f'block:{self.block}', 'utf8'))
+        if int(self.player_id) in finishers:
+            self.send(bytes_data=bytes(f'digg:{self.block}:{100}', 'utf8'))
 
 class PlayerConsumer(JsonWebsocketConsumer):
     def connect(self):

@@ -1,15 +1,15 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
-using Mirror.SimpleWeb;
+using System.Threading;
 using UnityEngine;
+using WebSocketSharp;
 
 public class NetworkManager : MonoBehaviour
 {
     public OtherPlayer playerPrefab;
     public GameObject cursorTransform;
     private Server server;
-    private SimpleWebClient client;
+    private WebSocket client;
     private Dictionary<string, OtherPlayer> otherPlayers = new Dictionary<string, OtherPlayer>();
     private string lastPositionReport = "";
     private string lastCursorReport = "";
@@ -22,8 +22,7 @@ public class NetworkManager : MonoBehaviour
             Destroy();
             return;
         }
-        Connect();
-        StartCoroutine(ProcessMessages());
+        Connect(null, null);
     }
 
     void Update()
@@ -31,18 +30,18 @@ public class NetworkManager : MonoBehaviour
         var position = GetUpdate(transform.position);
         if (!lastPositionReport.Equals(position))
         {
-            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes(
+            client.Send(Encoding.ASCII.GetBytes(
                 $"{{\"part\":\"player\",\"block\":\"{position.Split('|')[0]}\",\"position\":\"{position.Split('|')[1]}\"}}"
-            )));
+            ));
             lastPositionReport = position;
         }
 
         var cursor = GetUpdate(cursorTransform.transform.position);
         if (!lastCursorReport.Equals(cursor))
         {
-            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes(
+            client.Send(Encoding.ASCII.GetBytes(
                 $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
-            )));
+            ));
             lastCursorReport = cursor;
         }
     }
@@ -50,37 +49,29 @@ public class NetworkManager : MonoBehaviour
     {
         var block_pos = pos / 8;
         var block = $"{(int)block_pos.x}_{(int)block_pos.y}_{(int)block_pos.z}";
-        var position = $"{ToUInt8(pos.x % 8)}_{ToUInt8(pos.y % 8)}_{ToUInt8(pos.z % 8)}";
+        var position = $"{Int8.ToUInt8(pos.x % 8)}_{Int8.ToUInt8(pos.y % 8)}_{Int8.ToUInt8(pos.z % 8)}";
         return $"{block}|{position}";
-    }
-
-    IEnumerator<int> ProcessMessages()
-    {
-        while (this && client != null)
-        {
-            client.ProcessMessageQueue(this);
-            yield return 0;
-        }
     }
 
     public void Destroy()
     {
-        client.onDisconnect -= Connect;
-        client.Disconnect();
+        client.OnClose -= Connect;
+        client.Close();
         StopAllCoroutines();
     }
 
-    private void Connect()
+    private void Connect(object sender, CloseEventArgs e)
     {
-        client = SimpleWebClient.Create(2048, 64, new TcpConfig(true, 30000, 30000));
-        client.Connect(new Uri($"ws://{server.GetHost()}/ws/player/{server.GetPlayer()}/"));
-        client.onData += Receive;
-        client.onDisconnect += Connect;
+        if (e != null) Thread.Sleep(1000);
+        client = new WebSocket($"ws://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
+        client.OnMessage += Receive;
+        client.OnClose += Connect;
+        client.Connect();
     }
 
-    void Receive(ArraySegment<byte> data)
+    void Receive(object sender, MessageEventArgs data)
     {
-        string res = Encoding.ASCII.GetString(data);
+        string res = data.Data;
         if (res.StartsWith("pos:"))
         {
             var parts = res.Split(":");
@@ -157,21 +148,5 @@ public class NetworkManager : MonoBehaviour
             num = num.Substring(1);
         }
         return f;
-    }
-
-    private string ToUInt8(float f)
-    {
-        string res = "";
-        int i = (int)f;
-        while (f >= (int)f && f > 0 && res.Length < 3)
-        {
-            i = (int)f;
-            res = $"{res}{i}";
-            f -= i;
-            f *= 8;
-        }
-        if (res.Length == 0)
-            return "0";
-        return res;
     }
 }

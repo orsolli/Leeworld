@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
-using Mirror.SimpleWeb;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
+using WebSocketSharp;
 
 public class Block : MonoBehaviour
 {
@@ -11,14 +13,13 @@ public class Block : MonoBehaviour
     private MeshFilter meshFilter;
     private DateTime? startTime;
     private string block_id;
-    private bool dirty = true;
+    public bool dirty = true;
     private bool stop = false;
-    private bool destroy = false;
     private bool bussy = false;
-    private float progress;
-    private Server server;
+    public float progress;
+    public Server server;
     UnityWebRequest req;
-    SimpleWebClient client;
+    public WebSocket client;
 
     void Start()
     {
@@ -26,126 +27,59 @@ public class Block : MonoBehaviour
         server = FindObjectOfType<Server>(true);
         meshCollider = GetComponent<MeshCollider>();
         meshFilter = GetComponent<MeshFilter>();
-        Connect();
-        StartCoroutine(ProcessMessages());
-    }
-
-    IEnumerator<int> ProcessMessages()
-    {
-        while (this && client != null)
+        if (!block_id.Contains('-'))
         {
-            client.ProcessMessageQueue(this);
-            if (dirty && !bussy)
-            {
-                var c = UpdateMesh();
-                while (c.MoveNext())
-                {
-                    yield return 0;
-                };
-            }
-            yield return 0;
+            meshCollider.sharedMesh = null;
+            meshFilter.mesh = null;
         }
-    }
-
-    public void Destroy()
-    {
-        destroy = true;
-        client.Disconnect();
-    }
-
-    private void Connect()
-    {
-        if (!destroy)
-        {
-            client = SimpleWebClient.Create(2048, 64, new TcpConfig(true, 30000, 30000));
-            client.Connect(new Uri($"ws://{server.GetHost()}/ws/block/{block_id}/"));
-            client.onData += Receive;
-            client.onDisconnect += Connect;
-        }
+        StartCoroutine(UpdateMesh());
     }
 
     public IEnumerator<float> Digg(Transform previewBlock)
     {
+        while (client == null || !client.IsAlive) yield return 0;
         stop = false;
         startTime = DateTime.UtcNow;
         Vector3 previewPos = previewBlock.position - transform.position;
-        string position = $"{ToUInt8(previewPos.x)}_{ToUInt8(previewPos.y)}_{ToUInt8(previewPos.z)}";
-        while (!stop)
+        string position = $"{Int8.ToUInt8(previewPos.x)}_{Int8.ToUInt8(previewPos.y)}_{Int8.ToUInt8(previewPos.z)}";
+        client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}"));
+        while (!stop && progress < 1)
         {
-            client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}")));
-            client.ProcessMessageQueue();
             yield return progress;
         }
-
-        yield break;
+        yield return 1;
     }
 
     public void StopDigg()
     {
         stop = true;
-        client.Send(new ArraySegment<byte>(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}")));
+        client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}"));
+        Thread.Sleep(1);
     }
 
-    void Receive(ArraySegment<byte> data)
+    public IEnumerator<int> UpdateMesh()
     {
-        string res = Encoding.ASCII.GetString(data);
-        Debug.Log(res);
-        if (res.Equals("Waiting"))
-            progress = Progress(1);
-        else if (res.Equals("Done"))
+        if (!bussy)
         {
-            StopDigg();
-            dirty = true;
-            progress = 1;
+            bussy = true;
+            UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
+            meshRequest.downloadHandler = new DownloadHandlerBuffer();
+            meshRequest.useHttpContinue = false;
+            meshRequest.redirectLimit = 0;
+            meshRequest.timeout = 5;
+            meshRequest.SendWebRequest();
+            while (!meshRequest.isDone) yield return 0;
+            if ((int)(meshRequest.responseCode / 100) == 2)
+            {
+                while (!meshRequest.downloadHandler.isDone) yield return 0;
+                meshFilter.mesh = MeshParser.ParseOBJ(meshRequest.downloadHandler.text);
+                meshCollider.sharedMesh = meshFilter.mesh;
+            }
+            else
+            {
+                Debug.LogError($"Failed to fetch mesh for {block_id}");
+            }
+            bussy = false;
         }
-        else if (res.Equals("Dirty"))
-        {
-            dirty = true;
-        }
-    }
-
-    IEnumerator<int> UpdateMesh()
-    {
-        bussy = true;
-        dirty = false;
-        UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
-        meshRequest.downloadHandler = new DownloadHandlerBuffer();
-        meshRequest.useHttpContinue = false;
-        meshRequest.redirectLimit = 0;
-        meshRequest.timeout = 5;
-        meshRequest.SendWebRequest();
-        while (!meshRequest.isDone) yield return 0;
-        if ((int)(meshRequest.responseCode / 100) == 2)
-        {
-            while (!meshRequest.downloadHandler.isDone) yield return 0;
-            meshFilter.mesh = MeshParser.ParseOBJ(meshRequest.downloadHandler.text);
-            meshCollider.sharedMesh = meshFilter.mesh;
-        }
-        else
-        {
-            dirty = true;
-        }
-        bussy = false;
-    }
-
-    private string ToUInt8(float f)
-    {
-        string res = "";
-        int i = (int)f;
-        while (f >= (int)f && res.Length < 3)
-        {
-            i = (int)f;
-            res = $"{res}{i}";
-            f -= i;
-            f *= 8;
-        }
-        if (res.Length == 0)
-            return "0";
-        return res;
-    }
-
-    private float Progress(float duration)
-    {
-        return (float)(DateTime.UtcNow - startTime)?.TotalSeconds / 10 % duration;
     }
 }

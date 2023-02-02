@@ -616,7 +616,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 963194225}
   chunkPrefab: {fileID: 3974097394996176132, guid: f3ccf12cccd5ca3b1a939f230fd96eb9, type: 3}
-  memory: 8
+  memory: 10
+  server: {fileID: 2059282661}
 --- !u!4 &2145239921
 Transform:
   m_ObjectHideFlags: 0

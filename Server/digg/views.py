@@ -41,7 +41,7 @@ def get_block(request: HttpRequest):
     if not block_id.count('_') == 2:
         return HttpResponse("block must be three numbers separated by underscore (x_y_z)")
     block, created = models.Block.objects.get_or_create(
-        defaults={'mesh':cube},
+        defaults={'mesh':cube if '-' in block_id else ''},
         position=block_id.replace('_', ',')
     )
     return HttpResponse(block.mesh, status=201 if created else 200)
