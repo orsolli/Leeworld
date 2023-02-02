@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using NativeWebSocket;
 using UnityEngine;
-using WebSocketSharp;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -22,7 +22,7 @@ public class NetworkManager : MonoBehaviour
             Destroy();
             return;
         }
-        Connect(null, null);
+        Connect(WebSocketCloseCode.NotSet);
     }
 
     void Update()
@@ -60,18 +60,18 @@ public class NetworkManager : MonoBehaviour
         StopAllCoroutines();
     }
 
-    private void Connect(object sender, CloseEventArgs e)
+    private void Connect(WebSocketCloseCode e)
     {
-        if (e != null) Thread.Sleep(1000);
+        if (e != WebSocketCloseCode.NotSet) Thread.Sleep(1000);
         client = new WebSocket($"ws://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
         client.OnMessage += Receive;
         client.OnClose += Connect;
         client.Connect();
     }
 
-    void Receive(object sender, MessageEventArgs data)
+    void Receive(byte[] data)
     {
-        string res = data.Data;
+        string res = Encoding.ASCII.GetString(data);
         if (res.StartsWith("pos:"))
         {
             var parts = res.Split(":");

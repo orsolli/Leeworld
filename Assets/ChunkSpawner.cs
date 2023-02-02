@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
+using NativeWebSocket;
 using UnityEngine;
-using WebSocketSharp;
 
 public class ChunkSpawner : MonoBehaviour
 {
@@ -20,13 +20,13 @@ public class ChunkSpawner : MonoBehaviour
     void Start()
     {
         chunkSize = (int)chunkPrefab.transform.localScale.x;
-        Connect(null, null);
+        Connect(WebSocketCloseCode.NotSet);
         StartCoroutine(Spawn());
     }
 
-    void Receive(object sender, MessageEventArgs data)
+    void Receive(byte[] data)
     {
-        string res = data.Data;
+        string res = Encoding.ASCII.GetString(data);
         Debug.Log(res);
         if (res.StartsWith("digg:"))
         {
@@ -59,9 +59,9 @@ public class ChunkSpawner : MonoBehaviour
         StopAllCoroutines();
     }
 
-    private void Connect(object sender, CloseEventArgs e)
+    private void Connect(WebSocketCloseCode e)
     {
-        if (e != null) Thread.Sleep(1000);
+        if (e != WebSocketCloseCode.NotSet) Thread.Sleep(1000);
         client = new WebSocket($"ws://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/");
         client.OnMessage += Receive;
         client.OnClose += Connect;

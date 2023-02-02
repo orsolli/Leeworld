@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Text;
 using System.Threading;
+using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.Networking;
-using WebSocketSharp;
 
 public class Block : MonoBehaviour
 {
@@ -37,7 +36,7 @@ public class Block : MonoBehaviour
 
     public IEnumerator<float> Digg(Transform previewBlock)
     {
-        while (client == null || !client.IsAlive) yield return 0;
+        while (client == null || client.State != WebSocketState.Open) yield return 0;
         stop = false;
         startTime = DateTime.UtcNow;
         Vector3 previewPos = previewBlock.position - transform.position;
