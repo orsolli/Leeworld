@@ -9,11 +9,11 @@ public class Digg : MonoBehaviour
     public Transform progressBlock;
     private Transform targetTransform;
     public LayerMask layerMask;
-    private IEnumerator<float> diggingCoroutine;
+    private IAsyncEnumerator<float> diggingCoroutine;
     [ReadOnly(true)] public float progress;
     private Block block;
 
-    void Update()
+    async void Update()
     {
         if (diggingCoroutine == null && MovePreviewBlock() && Input.GetMouseButtonDown(0))
         {
@@ -26,7 +26,6 @@ public class Digg : MonoBehaviour
             if (diggingCoroutine != null)
             {
                 block.StopDigg();
-                while (diggingCoroutine.MoveNext()) ;
                 block = null;
                 diggingCoroutine = null;
                 progress = 0;
@@ -35,7 +34,7 @@ public class Digg : MonoBehaviour
 
         if (diggingCoroutine != null)
         {
-            if (diggingCoroutine.MoveNext())
+            if (await diggingCoroutine.MoveNextAsync())
             {
                 progress = diggingCoroutine.Current;
             }

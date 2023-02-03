@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using NativeWebSocket;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -22,15 +22,16 @@ public class NetworkManager : MonoBehaviour
             Destroy();
             return;
         }
-        Connect(WebSocketCloseCode.NotSet);
+        Connect();
     }
 
-    void Update()
+    async void Update()
     {
+
         var position = GetUpdate(transform.position);
         if (!lastPositionReport.Equals(position))
         {
-            client.Send(Encoding.ASCII.GetBytes(
+            await client.Send(Encoding.ASCII.GetBytes(
                 $"{{\"part\":\"player\",\"block\":\"{position.Split('|')[0]}\",\"position\":\"{position.Split('|')[1]}\"}}"
             ));
             lastPositionReport = position;
@@ -39,11 +40,14 @@ public class NetworkManager : MonoBehaviour
         var cursor = GetUpdate(cursorTransform.transform.position);
         if (!lastCursorReport.Equals(cursor))
         {
-            client.Send(Encoding.ASCII.GetBytes(
+            await client.Send(Encoding.ASCII.GetBytes(
                 $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
             ));
             lastCursorReport = cursor;
         }
+#if !UNITY_WEBGL || UNITY_EDITOR
+        client.DispatchMessageQueue();
+#endif
     }
     private string GetUpdate(Vector3 pos)
     {
@@ -55,18 +59,19 @@ public class NetworkManager : MonoBehaviour
 
     public void Destroy()
     {
-        client.OnClose -= Connect;
         client.Close();
         StopAllCoroutines();
     }
 
-    private void Connect(WebSocketCloseCode e)
+    private async void Connect()
     {
-        if (e != WebSocketCloseCode.NotSet) Thread.Sleep(1000);
         client = new WebSocket($"ws://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
         client.OnMessage += Receive;
-        client.OnClose += Connect;
-        client.Connect();
+        client.OnClose += (e) =>
+        {
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+        };
+        await client.Connect();
     }
 
     void Receive(byte[] data)

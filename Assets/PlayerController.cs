@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     public float mouseSensitivity = 5.0f;
     public float pitchMin = -80.0f;
     public float pitchMax = 80.0f;
+    private bool started = false;
 
     private Vector3 moveDirection = Vector3.zero;
     private float yaw = 0.0f;
@@ -25,6 +26,17 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             SceneManager.LoadScene("MainMenu");
+        }
+        else if (!started)
+        {
+            if (Input.GetButton("Jump"))
+            {
+                started = true;
+            }
+            else
+            {
+                return;
+            }
         }
         // Rotate the character based on mouse movement
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;

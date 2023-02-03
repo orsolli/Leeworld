@@ -20,8 +20,15 @@ public class ChunkSpawner : MonoBehaviour
     void Start()
     {
         chunkSize = (int)chunkPrefab.transform.localScale.x;
-        Connect(WebSocketCloseCode.NotSet);
+        Connect();
         StartCoroutine(Spawn());
+    }
+
+    void Update()
+    {
+#if !UNITY_WEBGL || UNITY_EDITOR
+        client.DispatchMessageQueue();
+#endif
     }
 
     void Receive(byte[] data)
@@ -36,7 +43,7 @@ public class ChunkSpawner : MonoBehaviour
 
             var block = chunk.GetComponent<Block>();
             var ptc = res.Split(':')[2];
-            block.progress = int.Parse(ptc) / 100;
+            block.progress = int.Parse(ptc) / 100f;
             if (ptc.Equals("100"))
             {
                 block.progress = 0;
@@ -54,17 +61,14 @@ public class ChunkSpawner : MonoBehaviour
 
     public void Destroy()
     {
-        client.OnClose -= Connect;
-        client.Close();
         StopAllCoroutines();
     }
 
-    private void Connect(WebSocketCloseCode e)
+    private void Connect()
     {
-        if (e != WebSocketCloseCode.NotSet) Thread.Sleep(1000);
         client = new WebSocket($"ws://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/");
         client.OnMessage += Receive;
-        client.OnClose += Connect;
+        client.OnClose += (e) => Destroy();
         client.Connect();
     }
 

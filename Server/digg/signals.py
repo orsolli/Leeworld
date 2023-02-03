@@ -8,7 +8,7 @@ from queue import Empty
 
 DIGG=0
 STOP=1
-PING=1
+PING=2
 
 terraformer_signal = Signal()
 
@@ -37,7 +37,7 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
         if not models.Terraformer.objects.filter(player=player).exists():
             if queued:
                 print(f"{player_id} gave up the queue")
-            return False, [], 0
+            return False, [], 5
         deserter = models.Terraformer.objects.get(player=player)
         block = deserter.block
 
@@ -58,7 +58,7 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
         tools = []
         workers = models.TerraformQueue.objects.filter(block=block)
         if not workers.exists():
-            return True, [], 0
+            return False, [player.id], 5
         print(f"Go! {[p.player.id for p in workers]}")
         for worker in workers:
             tools.append((worker.player.mesh, worker.position))

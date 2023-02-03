@@ -10,7 +10,6 @@ public class Block : MonoBehaviour
 {
     private MeshCollider meshCollider;
     private MeshFilter meshFilter;
-    private DateTime? startTime;
     private string block_id;
     public bool dirty = true;
     private bool stop = false;
@@ -34,25 +33,28 @@ public class Block : MonoBehaviour
         StartCoroutine(UpdateMesh());
     }
 
-    public IEnumerator<float> Digg(Transform previewBlock)
+    async public IAsyncEnumerator<float> Digg(Transform previewBlock)
     {
         while (client == null || client.State != WebSocketState.Open) yield return 0;
         stop = false;
-        startTime = DateTime.UtcNow;
         Vector3 previewPos = previewBlock.position - transform.position;
         string position = $"{Int8.ToUInt8(previewPos.x)}_{Int8.ToUInt8(previewPos.y)}_{Int8.ToUInt8(previewPos.z)}";
-        client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}"));
         while (!stop && progress < 1)
         {
-            yield return progress;
+            DateTime nextPoll = DateTime.UtcNow.AddMilliseconds(100);
+            await client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block_id}\",\"position\":\"{position}\"}}"));
+            while ((nextPoll - DateTime.UtcNow).TotalMilliseconds > 0 && !stop && progress < 1)
+            {
+                yield return progress;
+            }
         }
         yield return 1;
     }
 
-    public void StopDigg()
+    public async void StopDigg()
     {
         stop = true;
-        client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}"));
+        await client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}"));
         Thread.Sleep(1);
     }
 

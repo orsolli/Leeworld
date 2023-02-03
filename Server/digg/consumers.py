@@ -10,7 +10,6 @@ class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.block_group_name = "blocks"
-        self.block = None
         self.duration = None
 
         async_to_sync(self.channel_layer.group_add)(
@@ -57,18 +56,19 @@ class BlockConsumer(JsonWebsocketConsumer):
                     done, finishers, time = response
                     break
             if self.duration is None:
-                self.duration = 5 if int(self.player_id) in finishers else 5 + (5 - time)
+                self.duration = 5 if int(self.player_id) in finishers else max(0, 5 + (5 - time))
                 async_to_sync(self.channel_layer.group_send)(
                     "cursors", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
                 )
             if done:
                 async_to_sync(self.channel_layer.group_send)(
-                    self.block_group_name, {"type": "block_message", "finishers": finishers}
+                    self.block_group_name, {"type": "block_message", "finishers": finishers, "block": block}
                 )
             elif int(self.player_id) in finishers:
-                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 - time) / self.duration))}', 'utf8'))
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 - time) / self.duration))}:fin', 'utf8'))
+
             elif int(self.player_id) not in finishers:
-                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 + (5 - time)) / self.duration))}', 'utf8'))
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 + (5 - time)) / self.duration))}:queue', 'utf8'))
 
         async_to_sync(self.channel_layer.group_send)(
             "cursors", {"type": "cursor_action", "player": self.player_id, "action": action, "block": block}
@@ -77,9 +77,10 @@ class BlockConsumer(JsonWebsocketConsumer):
     # Receive message from block group
     def block_message(self, event):
         finishers: list[int] = event["finishers"]
-        self.send(bytes_data=bytes(f'block:{self.block}', 'utf8'))
+        block = event["block"]
         if int(self.player_id) in finishers:
-            self.send(bytes_data=bytes(f'digg:{self.block}:{100}', 'utf8'))
+            self.send(bytes_data=bytes(f'digg:{block}:{100}', 'utf8'))
+        self.send(bytes_data=bytes(f'block:{block}', 'utf8'))
 
 class PlayerConsumer(JsonWebsocketConsumer):
     def connect(self):
