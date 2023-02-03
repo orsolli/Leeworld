@@ -79,6 +79,7 @@ public class Block : MonoBehaviour
             else
             {
                 Debug.LogError($"Failed to fetch mesh for {block_id}");
+                StartCoroutine(UpdateMesh());
             }
             bussy = false;
         }
