@@ -2,13 +2,20 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
-
+from django.contrib.auth.models import User
 from . import signals
+from . import models
 
+def authenticate(user, player_id):
+    return user.is_active and user.is_authenticated and models.Player.objects.filter(user__id=user.pk, id=player_id).exists()
 
 class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
+        self.user: User = self.scope["user"]
+        if not authenticate(self.user, self.player_id):
+            return self.close(3000)
+
         self.block_group_name = "blocks"
         self.duration = None
 
@@ -85,6 +92,9 @@ class BlockConsumer(JsonWebsocketConsumer):
 class PlayerConsumer(JsonWebsocketConsumer):
     def connect(self):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
+        self.user: User = self.scope["user"]
+        if not authenticate(self.user, self.player_id):
+            return self.disconnect(3000)
         self.players_group = "players"
         self.block = None
 

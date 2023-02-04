@@ -1,6 +1,8 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpRequest
+from django.shortcuts import render, redirect
 from . import models
-
 
 
 player_mesh = """v 0 0 0
@@ -33,6 +35,27 @@ f 5//1 8//1 6//1
 f 5//1 7//1 8//1
 """
 
+LIMIT = 1
 
+@login_required
 def register(request: HttpRequest):
-    return HttpResponse(models.Player.objects.create(mesh=player_mesh).id)
+    user = models.User.objects.get(id=request.user.id)
+    count = models.Player.objects.filter(user=user).count()
+    level = messages.INFO
+    if count < LIMIT:
+        HttpResponse(models.Player.objects.create(user=user, mesh=player_mesh).id)
+    if count == LIMIT-1:
+        level = messages.WARNING
+    elif count == LIMIT:
+        level = messages.ERROR
+
+    messages.add_message(request, level, f'You are limited to {LIMIT} profile{"s" if LIMIT != 1 else ""}')
+    return redirect('/')
+
+@login_required
+def profile(request: HttpRequest):
+    players = models.Player.objects.filter(user=request.user.id)
+    return render(request, 'profile.html', {
+        'players': players,
+        'can_register': players.count() < LIMIT,
+    })
