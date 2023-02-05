@@ -35,7 +35,7 @@ f 5//1 8//1 6//1
 f 5//1 7//1 8//1
 """
 
-LIMIT = 1
+LIMIT = 4
 
 @login_required
 def register(request: HttpRequest):
