@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,6 +96,22 @@ CHANNEL_LAYERS = {
     }
 }
 
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+WHITENOISE_MIMETYPES = {
+    "webgl.framework.js.gz": "text/javascript",
+    "webgl.wasm.gz": "application/wasm",
+}
+
+def add_content_encoding(headers, path, url):
+    if path.endswith('.gz'):
+        headers['Content-Encoding'] = 'gzip'
+
+WHITENOISE_ADD_HEADERS_FUNCTION = add_content_encoding
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -132,7 +149,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "../Build/WebGL",
 ]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

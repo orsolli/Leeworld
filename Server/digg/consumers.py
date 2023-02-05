@@ -2,17 +2,17 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
-from django.contrib.auth.models import User
-from . import signals
-from . import models
 
 def authenticate(user, player_id):
+    from . import models
     return user.is_active and user.is_authenticated and models.Player.objects.filter(user__id=user.pk, id=player_id).exists()
 
 class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
+        from . import signals
+        self.signals = signals
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
-        self.user: User = self.scope["user"]
+        self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
             return self.close(3000)
 
@@ -27,9 +27,9 @@ class BlockConsumer(JsonWebsocketConsumer):
 
     def disconnect(self, close_code):
         self.duration = None
-        signals.terraformer_signal.send(
+        self.signals.terraformer_signal.send(
             sender=None,
-            action=signals.STOP,
+            action=self.signals.STOP,
             player_id=self.player_id,
         )
         async_to_sync(self.channel_layer.group_discard)(
@@ -43,23 +43,23 @@ class BlockConsumer(JsonWebsocketConsumer):
         block = None
         if action == 'stop':
             self.duration = None
-            signals.terraformer_signal.send(
+            self.signals.terraformer_signal.send(
                 sender=None,
-                action=signals.STOP,
+                action=self.signals.STOP,
                 player_id=self.player_id,
             )
         elif action == 'digg':
             block = text_data_json['block']
             position = text_data_json['position']
-            results = signals.terraformer_signal.send(
+            results = self.signals.terraformer_signal.send(
                 sender=None,
-                action=signals.DIGG if self.duration is None else signals.PING,
+                action=self.signals.DIGG if self.duration is None else self.signals.PING,
                 player_id=self.player_id,
                 block_position=block.replace('_', ','),
                 position=position.replace('_', ','),
             )
             for receiver, response in results:
-                if receiver == signals.terraformer_signal_handler:
+                if receiver == self.signals.terraformer_signal_handler:
                     done, finishers, time = response
                     break
             if self.duration is None:
@@ -92,7 +92,7 @@ class BlockConsumer(JsonWebsocketConsumer):
 class PlayerConsumer(JsonWebsocketConsumer):
     def connect(self):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
-        self.user: User = self.scope["user"]
+        self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
             return self.disconnect(3000)
         self.players_group = "players"

@@ -7,6 +7,8 @@ name = "pypi"
 django = "*"
 pycsg = "*"
 channels = {extras = ["daphne"], version = "*"}
+channels-redis = "*"
+whitenoise = "*"
 
 [dev-packages]
 
