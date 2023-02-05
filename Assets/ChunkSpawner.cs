@@ -66,7 +66,7 @@ public class ChunkSpawner : MonoBehaviour
 
     private void Connect()
     {
-        client = new WebSocket($"ws://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/");
+        client = new WebSocket($"wss://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/");
         client.OnMessage += Receive;
         client.OnClose += (e) => Destroy();
         client.Connect();

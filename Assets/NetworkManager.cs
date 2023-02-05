@@ -65,7 +65,7 @@ public class NetworkManager : MonoBehaviour
 
     private async void Connect()
     {
-        client = new WebSocket($"ws://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
+        client = new WebSocket($"wss://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
         client.OnMessage += Receive;
         client.OnClose += (e) =>
         {

@@ -76,3 +76,5 @@ Server/db.sqlite3
 *.pyc
 Unity_lic.ulf
 Server/LeeworldServer/production_settings.py
+Server/crt.pem
+Server/key.pem

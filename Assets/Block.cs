@@ -63,7 +63,7 @@ public class Block : MonoBehaviour
         if (!bussy)
         {
             bussy = true;
-            UnityWebRequest meshRequest = UnityWebRequest.Get($"http://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
+            UnityWebRequest meshRequest = UnityWebRequest.Get($"https://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
             meshRequest.downloadHandler = new DownloadHandlerBuffer();
             meshRequest.useHttpContinue = false;
             meshRequest.redirectLimit = 0;
