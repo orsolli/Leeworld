@@ -2,12 +2,10 @@
 
 ## Build
 
-    docker build -t orjans/leeworld .
+    docker build -t orjans/leeworld:hub --target hub .
+    docker run -it --rm orjans/leeworld:hub > Unity.alf
 
-First will fail, but print out XML from a file named Unity_v${UNITY_VERSION}.alf
-Upload that file to https://license.unity3d.com/manual and get the .ulf file and save it as Unity_lic.ulf
-
-Retry build with the new Unity_lic.ulf file
+Upload the Unity.alf file to https://license.unity3d.com/manual and get the .ulf file and save it as Unity_lic.ulf
 
     docker build -t orjans/leeworld .
 

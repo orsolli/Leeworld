@@ -74,6 +74,7 @@ crashlytics-build.properties
 # Server
 Server/db.sqlite3
 *.pyc
+Unity.alf
 Unity_lic.ulf
 Server/LeeworldServer/production_settings.py
 Server/crt.pem

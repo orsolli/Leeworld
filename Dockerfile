@@ -14,6 +14,10 @@ ARG UNITY_CHANGESET
 RUN unity-hub install --version ${UNITY_VERSION} --changeset ${UNITY_CHANGESET} --module webgl | tee output.log
 RUN cat output.log | grep 'Error' | exit $(wc -l)
 
+RUN "/opt/unity/editors/${UNITY_VERSION}/Editor/Unity" -batchmode -nographics -createManualActivationFile || cat "Unity_v${UNITY_VERSION}.alf"
+RUN cat "Unity_v${UNITY_VERSION}.alf" > Unity.alf
+CMD [ "cat", "Unity.alf" ]
+
 ###########################
 #          Editor         #
 ###########################
@@ -31,9 +35,6 @@ RUN echo $version > "${UNITY_PATH}/version"
 RUN echo '#!/bin/bash\nxvfb-run -ae /dev/stdout "${UNITY_PATH}/Editor/Unity" -batchmode "$@"' > /usr/bin/unity-editor \
     && chmod +x /usr/bin/unity-editor
 
-ARG UNITY_USERNAME
-ARG UNITY_PASSWORD
-RUN /usr/bin/unity-editor -batchmode -nographics -createManualActivationFile || cat "Unity_v${UNITY_VERSION}.alf"
 # First run will print the .alf file. Upload it to https://license.unity3d.com/manual to get the .ulf file and save it as Unity_lic.ulf for this next step
 COPY "Unity_lic.ulf" /root/.local/share/unity3d/Unity/
 
