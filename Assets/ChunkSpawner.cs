@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using NativeWebSocket;
 using UnityEngine;
 
@@ -8,7 +7,8 @@ public class ChunkSpawner : MonoBehaviour
 {
     public GameObject target;
     public GameObject chunkPrefab;
-    public int memory = 32;
+    public int drawDistance = 16;
+    public int memory = 128;
     public static int worldSize = 255;
     private int chunkSize = 8;
     private Vector3 lastPos;
@@ -55,7 +55,7 @@ public class ChunkSpawner : MonoBehaviour
             var block_id = res.Split(':')[1].Split('_');
             var chunk = chunks[int.Parse(block_id[0]), int.Parse(block_id[1]), int.Parse(block_id[2])];
             if (chunk == null) return;
-            StartCoroutine(chunk.GetComponent<Block>().UpdateMesh());
+            StartCoroutine(chunk.GetComponent<Block>().UpdateMesh(10));
         }
     }
 
@@ -66,9 +66,11 @@ public class ChunkSpawner : MonoBehaviour
 
     private void Connect()
     {
-        client = new WebSocket($"wss://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/");
+        client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/", server.GetHeaders());
+
         client.OnMessage += Receive;
-        client.OnClose += (e) => Destroy();
+        client.OnError += Debug.LogError;
+        client.OnClose += (e) => { Debug.Log(e); Destroy(); };
         client.Connect();
     }
 
@@ -86,6 +88,7 @@ public class ChunkSpawner : MonoBehaviour
                 var y = (int)(pos.y / chunkSize);
                 var z = (int)(pos.z / chunkSize);
                 var mem = (int)Mathf.Sqrt(memory);
+                var spawnQueue = new LinkedList<SpawnPlan>();
                 for (int xo = -mem; xo < mem; xo++)
                 {
                     for (int yo = -mem; yo < mem; yo++)
@@ -93,25 +96,57 @@ public class ChunkSpawner : MonoBehaviour
                         for (int zo = -mem; zo < mem; zo++)
                         {
                             var chunkPos = new Vector3((x + xo) * chunkSize, (y + yo) * chunkSize, (z + zo) * chunkSize);
-                            if (chunks[(x + xo + worldSize) % worldSize, (y + yo + worldSize) % worldSize, (z + zo + worldSize) % worldSize] == null && Vector3.Distance(pos, chunkPos) < memory * chunkSize)
+                            if (chunks[(x + xo + worldSize) % worldSize, (y + yo + worldSize) % worldSize, (z + zo + worldSize) % worldSize] == null)
                             {
-                                var chunk = GameObject.Instantiate(chunkPrefab, chunkPos, Quaternion.identity);
-                                var block = chunk.GetComponent<Block>();
-                                block.client = client;
-                                block.server = server;
-                                chunks[(x + xo + worldSize) % worldSize, (y + yo + worldSize) % worldSize, (z + zo + worldSize) % worldSize] = chunk;
-                                //Debug.Log($"Spawned chunk {chunkPos}");
+                                var distance = Vector3.Distance(pos, chunkPos);
+                                if (distance < memory * chunkSize)
+                                {
+                                    var node = new SpawnPlan
+                                    {
+                                        distance = distance,
+                                        position = chunkPos,
+                                        x = (x + xo + worldSize) % worldSize,
+                                        y = (y + yo + worldSize) % worldSize,
+                                        z = (z + zo + worldSize) % worldSize,
+                                    };
+                                    if (spawnQueue.Count == 0 || node.distance < spawnQueue.First.Value.distance)
+                                    {
+                                        spawnQueue.AddFirst(node);
+                                        continue;
+                                    }
+                                    else if (node.distance > spawnQueue.Last.Value.distance)
+                                    {
+                                        spawnQueue.AddLast(node);
+                                        continue;
+                                    }
+                                    foreach (var n in spawnQueue)
+                                    {
+                                        if (node.distance < n.distance)
+                                        {
+                                            spawnQueue.AddBefore(spawnQueue.Find(n), node);
+                                            break;
+                                        }
+                                    }
+                                }
                             }
-                            yield return 0;
                         }
                     }
                 }
-                yield return 0;
+                foreach (var plan in spawnQueue)
+                {
+                    var chunk = GameObject.Instantiate(chunkPrefab, plan.position, Quaternion.identity);
+                    var block = chunk.GetComponent<Block>();
+                    block.client = client;
+                    block.server = server;
+                    chunks[plan.x, plan.y, plan.z] = chunk;
+                    yield return 0;
+                }
             }
             yield return 0;
             garbageCollector.MoveNext();
         }
     }
+
     private IEnumerator<int> GarbageCollect()
     {
         while (true)
@@ -133,5 +168,14 @@ public class ChunkSpawner : MonoBehaviour
                 yield return 0;
             }
         }
+    }
+
+    class SpawnPlan
+    {
+        internal int x;
+        internal float distance;
+        internal Vector3 position;
+        internal int y;
+        internal int z;
     }
 }

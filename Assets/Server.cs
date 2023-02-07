@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -14,6 +15,28 @@ public class Server : MonoBehaviour
     public string GetHost()
     {
         return PlayerPrefs.GetString("SERVER") ?? host;
+    }
+    public string GetHttpScheme()
+    {
+#if UNITY_EDITOR
+        return "http";
+#else
+        return "https";
+#endif
+    }
+    public string GetWsScheme()
+    {
+#if UNITY_EDITOR
+        return "ws";
+#else
+        return "wss";
+#endif
+    }
+    public Dictionary<string, string> GetHeaders()
+    {
+        var headers = new Dictionary<string, string>();
+        //headers.Add("Cookie", "sessionid=<placeholder>");
+        return headers;
     }
 
     void Start()

@@ -27,7 +27,7 @@ public class NetworkManager : MonoBehaviour
 
     async void Update()
     {
-
+        if (client == null || client.State != WebSocketState.Open) return;
         var position = GetUpdate(transform.position);
         if (!lastPositionReport.Equals(position))
         {
@@ -65,10 +65,12 @@ public class NetworkManager : MonoBehaviour
 
     private async void Connect()
     {
-        client = new WebSocket($"wss://{server.GetHost()}/ws/player/{server.GetPlayer()}/");
+        client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/player/{server.GetPlayer()}/", server.GetHeaders());
         client.OnMessage += Receive;
+        client.OnError += Debug.LogError;
         client.OnClose += (e) =>
         {
+            Debug.Log(e);
             SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
         };
         await client.Connect();
@@ -143,6 +145,7 @@ public class NetworkManager : MonoBehaviour
 
     private float FromUInt8(string num)
     {
+        int max_loop = 64;
         int i = 1;
         float f = 0;
         while (num.Length > 0)
@@ -151,6 +154,7 @@ public class NetworkManager : MonoBehaviour
             f += (float)n / i;
             i = i * 8;
             num = num.Substring(1);
+            if (max_loop-- < 0) break;
         }
         return f;
     }

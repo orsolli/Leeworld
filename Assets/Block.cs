@@ -27,10 +27,9 @@ public class Block : MonoBehaviour
         meshFilter = GetComponent<MeshFilter>();
         if (!block_id.Contains('-'))
         {
-            meshCollider.sharedMesh = null;
             meshFilter.mesh = null;
         }
-        StartCoroutine(UpdateMesh());
+        StartCoroutine(UpdateMesh(2));
     }
 
     async public IAsyncEnumerator<float> Digg(Transform previewBlock)
@@ -58,16 +57,20 @@ public class Block : MonoBehaviour
         Thread.Sleep(1);
     }
 
-    public IEnumerator<int> UpdateMesh()
+    public IEnumerator<int> UpdateMesh(int recursionLimit)
     {
         if (!bussy)
         {
             bussy = true;
-            UnityWebRequest meshRequest = UnityWebRequest.Get($"https://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
+            UnityWebRequest meshRequest = UnityWebRequest.Get($"{server.GetHttpScheme()}://{server.GetHost()}/digg/block/?player={server.GetPlayer()}&block={block_id}");
             meshRequest.downloadHandler = new DownloadHandlerBuffer();
             meshRequest.useHttpContinue = false;
             meshRequest.redirectLimit = 0;
-            meshRequest.timeout = 5;
+            meshRequest.timeout = 60;
+            foreach (var header in server.GetHeaders())
+            {
+                meshRequest.SetRequestHeader(header.Key, header.Value);
+            }
             meshRequest.SendWebRequest();
             while (!meshRequest.isDone) yield return 0;
             if ((int)(meshRequest.responseCode / 100) == 2)
@@ -78,8 +81,15 @@ public class Block : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"Failed to fetch mesh for {block_id}");
-                StartCoroutine(UpdateMesh());
+                if (recursionLimit > 0)
+                {
+                    yield return 0;
+                    StartCoroutine(UpdateMesh(recursionLimit - 1));
+                }
+                else
+                {
+                    Debug.LogError($"Failed to fetch mesh for {block_id}");
+                }
             }
             bussy = false;
         }
