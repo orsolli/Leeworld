@@ -38,7 +38,7 @@ public class ChunkSpawner : MonoBehaviour
         if (res.StartsWith("digg:"))
         {
             var block_id = res.Split(':')[1].Split('_');
-            var chunk = chunks[int.Parse(block_id[0]), int.Parse(block_id[1]), int.Parse(block_id[2])];
+            var chunk = chunks[ToIndex(int.Parse(block_id[0])), ToIndex(int.Parse(block_id[1])), ToIndex(int.Parse(block_id[2]))];
             if (chunk == null) return;
 
             var block = chunk.GetComponent<Block>();
@@ -53,7 +53,7 @@ public class ChunkSpawner : MonoBehaviour
         else if (res.StartsWith("block:"))
         {
             var block_id = res.Split(':')[1].Split('_');
-            var chunk = chunks[int.Parse(block_id[0]), int.Parse(block_id[1]), int.Parse(block_id[2])];
+            var chunk = chunks[ToIndex(int.Parse(block_id[0])), ToIndex(int.Parse(block_id[1])), ToIndex(int.Parse(block_id[2]))];
             if (chunk == null) return;
             StartCoroutine(chunk.GetComponent<Block>().UpdateMesh(10));
         }
@@ -96,7 +96,7 @@ public class ChunkSpawner : MonoBehaviour
                         for (int zo = -mem; zo < mem; zo++)
                         {
                             var chunkPos = new Vector3((x + xo) * chunkSize, (y + yo) * chunkSize, (z + zo) * chunkSize);
-                            if (chunks[(x + xo + worldSize) % worldSize, (y + yo + worldSize) % worldSize, (z + zo + worldSize) % worldSize] == null)
+                            if (chunks[ToIndex(x + xo), ToIndex(y + yo), ToIndex(z + zo)] == null)
                             {
                                 var distance = Vector3.Distance(pos, chunkPos);
                                 if (distance < memory * chunkSize)
@@ -105,9 +105,9 @@ public class ChunkSpawner : MonoBehaviour
                                     {
                                         distance = distance,
                                         position = chunkPos,
-                                        x = (x + xo + worldSize) % worldSize,
-                                        y = (y + yo + worldSize) % worldSize,
-                                        z = (z + zo + worldSize) % worldSize,
+                                        x = ToIndex(x + xo),
+                                        y = ToIndex(y + yo),
+                                        z = ToIndex(z + zo),
                                     };
                                     if (spawnQueue.Count == 0 || node.distance < spawnQueue.First.Value.distance)
                                     {
@@ -157,7 +157,7 @@ public class ChunkSpawner : MonoBehaviour
                 {
                     for (int zi = 0; zi < worldSize; zi++)
                     {
-                        var block = chunks[xi % worldSize, yi % worldSize, zi % worldSize];
+                        var block = chunks[xi, yi, zi];
                         if (block != null && Vector3.Distance(lastPos, block.transform.position) > (memory + 1) * chunkSize)
                         {
                             //Debug.Log($"Destroying chunk {block.transform.position}");
@@ -168,6 +168,11 @@ public class ChunkSpawner : MonoBehaviour
                 yield return 0;
             }
         }
+    }
+
+    private int ToIndex(int scalar)
+    {
+        return (scalar + worldSize) % worldSize;
     }
 
     class SpawnPlan

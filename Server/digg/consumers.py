@@ -94,7 +94,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
-            return self.disconnect(3000)
+            return self.close(3000)
         self.players_group = "players"
         self.block = None
 
