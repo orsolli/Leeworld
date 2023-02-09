@@ -96,7 +96,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
         if not authenticate(self.user, self.player_id):
             return self.close(3000)
         self.players_group = "players"
-        self.block = None
+        self.block = '0,0,0'
+        self.throttle = 0
 
         async_to_sync(self.channel_layer.group_add)(
             self.players_group, self.channel_name
@@ -128,24 +129,33 @@ class PlayerConsumer(JsonWebsocketConsumer):
         player = event["player"]
         block = event["block"]
         position = event["position"]
-        if self.player_id != player and self.nearby(block):
-            self.send(bytes_data=bytes(f'pos:{player}:{block}:{position}', 'utf8'))
+        if self.player_id != player:
+            self.throttle -= 1.1
+            if self.throttle < 0:
+                self.throttle = self.distance(block)
+                self.send(bytes_data=bytes(f'pos:{player}:{block}:{position}', 'utf8'))
 
     # Receive position from cursors group
     def cursor_position(self, event):
         player = event["player"]
         block = event["block"]
         position = event["position"]
-        if self.player_id != player and self.nearby(block):
-            self.send(bytes_data=bytes(f'cur:{player}:{block}:{position}', 'utf8'))
+        if self.player_id != player:
+            self.throttle -= 1.1
+            if self.throttle < 0:
+                self.throttle = self.distance(block)
+                self.send(bytes_data=bytes(f'cur:{player}:{block}:{position}', 'utf8'))
 
     # Receive action from block group
     def cursor_action(self, event):
         player = event["player"]
         action = event["action"]
         block = event["action"]
-        if self.player_id != player and (block is None or self.nearby(block)):
-            self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
+        if self.player_id != player:
+            self.throttle -= 1.1
+            if self.throttle < 0:
+                self.throttle = self.distance(block)
+                self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
 
     # Receive disconnect from block group
     def player_disconnect(self, event):
@@ -153,9 +163,9 @@ class PlayerConsumer(JsonWebsocketConsumer):
         if self.player_id != player:
             self.send(bytes_data=bytes(f'off:{player}', 'utf8'))
 
-    def nearby(self, block: str):
+    def distance(self, block: str):
         if self.block is None:
-            return False
+            return 0
         position_a = block.split('_')
         position_b = self.block.split('_')
         relative_position = [
@@ -168,4 +178,4 @@ class PlayerConsumer(JsonWebsocketConsumer):
             relative_position[1]**2,
             relative_position[2]**2,
         ])
-        return distance_sqared < 36
+        return distance_sqared
