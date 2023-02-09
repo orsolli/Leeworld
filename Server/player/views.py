@@ -52,10 +52,12 @@ def register(request: HttpRequest):
     messages.add_message(request, level, f'You are limited to {LIMIT} profile{"s" if LIMIT != 1 else ""}')
     return redirect('/')
 
-@login_required
 def profile(request: HttpRequest):
-    players = models.Player.objects.filter(user=request.user.id)
     return render(request, 'profile.html', {
-        'players': players,
-        'can_register': players.count() < LIMIT,
+        'can_register': LIMIT,
     })
+
+@login_required
+def profiles_list(request: HttpRequest):
+    players = models.Player.objects.filter(user=request.user.id)
+    return HttpResponse(', '.join([str(p.id) for p in players]))

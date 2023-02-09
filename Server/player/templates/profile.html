@@ -1,16 +1,6 @@
-<a href="/auth/logout/">Logout</a>
-{{user.id}} - {{user.username}}
-<h2>Profiles</h2>
-{% for player in players %}
-<p>{{player.id}}{{player.position}}</p>
-{% endfor %}
-{% if can_register %} <a href="/register/">Add profile</a> {% endif %}
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-        {% endfor %}
-</ul>
-{% endif %}
+<h1>Leeworld</h1>
+<p>Username: demo</p>
+<p>password: Det gjetter du aldri</p>
+<p>Server: {{request.get_host}}</p>
 {% load static %}
 <iframe src="{% static 'index.html' %}" width="970" height="650" />
