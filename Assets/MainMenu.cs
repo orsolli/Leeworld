@@ -3,16 +3,12 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public TMPro.TMP_InputField ServerInputField;
-    public TMPro.TMP_InputField PythonInputField;
     public TMPro.TMP_InputField PlayerInputField;
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        ServerInputField.text = PlayerPrefs.GetString("SERVER");
-        PythonInputField.text = PlayerPrefs.GetString("PYTHON_PATH"); //"/home/orsolli/.local/share/virtualenvs/Server-74Jy8cNt/bin");
         PlayerInputField.text = PlayerPrefs.GetString("PLAYER");
     }
 
@@ -22,11 +18,14 @@ public class MainMenu : MonoBehaviour
         {
             Application.Quit();
         }
-    }
-
-    public void SetServer(string server)
-    {
-        PlayerPrefs.SetString("SERVER", server);
+        else if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            PlayerInputField.Select();
+        }
+        else if (Input.GetKeyUp(KeyCode.Return))
+        {
+            Play();
+        }
     }
 
     public void SetPlayer(string player)
@@ -36,16 +35,12 @@ public class MainMenu : MonoBehaviour
 
     public void Play()
     {
-        SceneManager.LoadScene("OpenWorld");
+        SceneManager.LoadScene("OpenWorld", LoadSceneMode.Single);
     }
 
-    public void ToggleAdvancedMenu(GameObject AdvancedMenu)
+    public void Logout()
     {
-        AdvancedMenu.SetActive(!AdvancedMenu.activeSelf);
-    }
-
-    public void SetPythonPath(string pythonPath)
-    {
-        PlayerPrefs.SetString("PYTHON_PATH", pythonPath); //"/home/orsolli/.local/share/virtualenvs/Server-74Jy8cNt/bin");
+        PlayerPrefs.DeleteAll();
+        SceneManager.LoadScene("Login", LoadSceneMode.Single);
     }
 }

@@ -69,7 +69,7 @@ public class ChunkSpawner : MonoBehaviour
         client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/", server.GetHeaders());
 
         client.OnMessage += Receive;
-        client.OnError += Debug.LogError;
+        client.OnError += (e) => { Debug.LogError(e); Destroy(); };
         client.OnClose += (e) => { Debug.Log(e); Destroy(); };
         client.Connect();
     }

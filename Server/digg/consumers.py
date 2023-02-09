@@ -9,6 +9,7 @@ def authenticate(user, player_id):
 
 class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
+        self.block_group_name = None
         from . import signals
         self.signals = signals
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
@@ -26,6 +27,8 @@ class BlockConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
+        if not self.block_group_name:
+            return
         self.duration = None
         self.signals.terraformer_signal.send(
             sender=None,
@@ -91,6 +94,7 @@ class BlockConsumer(JsonWebsocketConsumer):
 
 class PlayerConsumer(JsonWebsocketConsumer):
     def connect(self):
+        self.players_group = None
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
@@ -106,6 +110,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
+        if not self.players_group:
+            return
         async_to_sync(self.channel_layer.group_send)(
             self.players_group, {"type": "player_disconnect", "player": self.player_id}
         )

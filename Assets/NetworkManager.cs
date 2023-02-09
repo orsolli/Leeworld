@@ -59,15 +59,19 @@ public class NetworkManager : MonoBehaviour
 
     public void Destroy()
     {
-        client.Close();
         StopAllCoroutines();
+        client.Close();
     }
 
     private async void Connect()
     {
         client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/player/{server.GetPlayer()}/", server.GetHeaders());
         client.OnMessage += Receive;
-        client.OnError += Debug.LogError;
+        client.OnError += (e) =>
+        {
+            Debug.LogError(e);
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+        };
         client.OnClose += (e) =>
         {
             Debug.Log(e);
