@@ -8,7 +8,7 @@ namespace Leeworld
         {
             var options = new BuildPlayerOptions
             {
-                scenes = new[] { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/OpenWorld.unity" },
+                scenes = new[] { "Assets/Scenes/Login.unity", "Assets/Scenes/MainMenu.unity", "Assets/Scenes/OpenWorld.unity" },
                 target = BuildTarget.WebGL,
                 locationPathName = "Build/WebGL",
             };
