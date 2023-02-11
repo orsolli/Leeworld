@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 from . import models
 
 
@@ -61,3 +63,20 @@ def profile(request: HttpRequest):
 def profiles_list(request: HttpRequest):
     players = models.Player.objects.filter(user=request.user.id)
     return HttpResponse(', '.join([str(p.id) for p in players]))
+
+@csrf_exempt
+def login_user(request: HttpRequest):
+    if request.user.is_authenticated:
+        return HttpResponse('Authorized', status=200)
+    if request.method == 'GET':
+        return HttpResponse('Unauthorized', status=401)
+    user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+    if user is not None:
+        login(request, user)
+        return HttpResponse('Authorized', status=200)
+    return HttpResponse('Unauthorized', status=401)
+
+@login_required
+def logout_user(request: HttpRequest):
+    logout(request)
+    return HttpResponse()

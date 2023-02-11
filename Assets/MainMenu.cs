@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -6,6 +7,7 @@ using UnityEngine.SceneManagement;
 public class MainMenu : MonoBehaviour
 {
     public TMPro.TMP_InputField PlayerInputField;
+    public TMPro.TMP_Dropdown PlayerInputSelector;
 
     void Start()
     {
@@ -23,7 +25,10 @@ public class MainMenu : MonoBehaviour
         }
         else if (Input.GetKeyUp(KeyCode.Tab))
         {
-            PlayerInputField.Select();
+            if (PlayerInputField.enabled)
+                PlayerInputField.Select();
+            else if (PlayerInputSelector.enabled)
+                PlayerInputSelector.Select();
         }
         else if (Input.GetKeyUp(KeyCode.Return))
         {
@@ -37,20 +42,32 @@ public class MainMenu : MonoBehaviour
         if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
             scheme = "http";
         string host = PlayerPrefs.GetString("SERVER", "localhost");
-        string session = PlayerPrefs.GetString("SESSION");
         UnityWebRequest loginRequest = UnityWebRequest.Get($"{scheme}://{host}/profiles/");
         loginRequest.downloadHandler = new DownloadHandlerBuffer();
         loginRequest.useHttpContinue = false;
         loginRequest.redirectLimit = 0;
         loginRequest.timeout = 60;
-        loginRequest.SetRequestHeader("Cookie", $"sessionid={session}");
         loginRequest.SendWebRequest();
         while (!loginRequest.isDone) yield return null;
         if ((int)(loginRequest.responseCode / 100) == 2)
         {
-            while (!loginRequest.downloadHandler.isDone) yield return 0;
-            if (!loginRequest.downloadHandler.text.Contains(PlayerInputField.text))
-                PlayerInputField.text = loginRequest.downloadHandler.text;
+            while (!loginRequest.downloadHandler.isDone) yield return null;
+            var res = loginRequest.downloadHandler.text;
+            PlayerInputSelector.ClearOptions();
+            if (res.Length > 0)
+            {
+                PlayerInputSelector.AddOptions(res.Split(", ").ToList());
+                PlayerInputSelector.gameObject.SetActive(true);
+                PlayerInputField.gameObject.SetActive(false);
+                PlayerInputSelector.value = 0;
+                PlayerInputSelector.value = PlayerInputSelector.options.FindIndex((option) => option.text.Equals(PlayerInputField.text));
+
+            }
+            else
+            {
+                PlayerInputSelector.gameObject.SetActive(false);
+                PlayerInputField.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -59,15 +76,30 @@ public class MainMenu : MonoBehaviour
         PlayerPrefs.SetString("PLAYER", player.Trim());
     }
 
+    public void SelectPlayer(int playerIndex)
+    {
+        PlayerPrefs.SetString("PLAYER", PlayerInputSelector.options[playerIndex].text);
+    }
+
     public void Play()
     {
         if (!PlayerPrefs.GetString("PLAYER").Contains(","))
-            SceneManager.LoadScene("OpenWorld", LoadSceneMode.Single);
+            SceneManager.LoadScene("OpenWorld");
     }
 
     public void Logout()
     {
+        var scheme = "https";
+        if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
+            scheme = "http";
+        string host = PlayerPrefs.GetString("SERVER", "localhost");
         PlayerPrefs.DeleteAll();
-        SceneManager.LoadScene("Login", LoadSceneMode.Single);
+        UnityWebRequest loginRequest = UnityWebRequest.Get($"{scheme}://{host}/auth/logout/");
+        loginRequest.downloadHandler = new DownloadHandlerBuffer();
+        loginRequest.useHttpContinue = false;
+        loginRequest.redirectLimit = 0;
+        loginRequest.timeout = 120;
+        loginRequest.SendWebRequest();
+        SceneManager.LoadScene("Login");
     }
 }

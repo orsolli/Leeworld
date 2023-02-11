@@ -70,12 +70,12 @@ public class NetworkManager : MonoBehaviour
         client.OnError += (e) =>
         {
             Debug.LogError(e);
-            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            SceneManager.LoadScene("MainMenu");
         };
         client.OnClose += (e) =>
         {
             Debug.Log(e);
-            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+            SceneManager.LoadScene("MainMenu");
         };
         await client.Connect();
     }

@@ -11,7 +11,6 @@ public class LoginMenu : MonoBehaviour
     public TMPro.TMP_InputField ServerInputField;
     public TMPro.TMP_InputField UsernameInputField;
     public TMPro.TMP_InputField PasswordInputField;
-    public Button LoginButton;
     public GameObject LoadingIcon;
     public TMPro.TMP_Text ErrorMessage;
     private UnityWebRequest loginRequest;
@@ -20,7 +19,6 @@ public class LoginMenu : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        Authenticate();
         string host = PlayerPrefs.GetString("SERVER");
         if (!host.Equals("") && PlayerPrefs.GetString("SECURE").Equals(false.ToString()))
         {
@@ -28,6 +26,8 @@ public class LoginMenu : MonoBehaviour
         }
         ServerInputField.text = host;
         UsernameInputField.text = PlayerPrefs.GetString("USERNAME");
+        if (host.Length > 0)
+            StartCoroutine(Authenticate());
     }
 
     void Update()
@@ -75,15 +75,38 @@ public class LoginMenu : MonoBehaviour
         }
     }
 
-    private bool Authenticate()
+    private IEnumerator Authenticate()
     {
-        var expires = PlayerPrefs.GetString("EXPIRES");
-        if (!PlayerPrefs.GetString("SESSION").Equals("") && (expires.Equals("") || DateTime.Parse(expires).CompareTo(DateTime.Now) > 0))
+        ServerInputField.interactable = false;
+        ErrorMessage.text = "";
+        LoadingIcon.SetActive(true);
+        try
         {
-            SceneManager.LoadScene("MainMenu");
-            return true;
+            var scheme = "https";
+            if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
+                scheme = "http";
+            string host = PlayerPrefs.GetString("SERVER", "localhost");
+            UnityWebRequest authRequest = UnityWebRequest.Get($"{scheme}://{host}/auth/login/");
+            authRequest.downloadHandler = new DownloadHandlerBuffer();
+            authRequest.useHttpContinue = false;
+            authRequest.redirectLimit = 0;
+            authRequest.timeout = 3;
+            authRequest.SendWebRequest();
+            while (!authRequest.isDone)
+            {
+                LoadingIcon.transform.Rotate(Vector3.forward);
+                yield return null;
+            };
+            if ((int)(authRequest.responseCode / 100) == 2)
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
         }
-        return false;
+        finally
+        {
+            LoadingIcon.SetActive(false);
+            ServerInputField.interactable = true;
+        }
     }
 
     public void SetServer(string server)
@@ -120,20 +143,28 @@ public class LoginMenu : MonoBehaviour
         UsernameInputField.interactable = false;
         PasswordInputField.interactable = false;
         ErrorMessage.text = "";
-        var loginAttempt = TryLogin();
         LoadingIcon.SetActive(true);
         try
         {
             var scheme = "https";
             if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
                 scheme = "http";
-            string host = PlayerPrefs.GetString("SERVER", "localhost");
+            string host = PlayerPrefs.GetString("SERVER", "");
             if (loginRequest != null)
             {
                 loginRequest.Abort();
                 yield break;
             }
-            loginRequest = UnityWebRequest.Get($"{scheme}://{host}/auth/login/");
+            if (host.Equals(""))
+            {
+                ErrorMessage.text = "Missing server";
+                yield break;
+            }
+            loginRequest = UnityWebRequest.Post($"{scheme}://{host}/auth/login/", new Dictionary<string, string>
+            {
+                ["username"] = UsernameInputField.text,
+                ["password"] = PasswordInputField.text,
+            });
             loginRequest.useHttpContinue = false;
             loginRequest.redirectLimit = 0;
             loginRequest.timeout = 60;
@@ -143,42 +174,16 @@ public class LoginMenu : MonoBehaviour
                 LoadingIcon.transform.Rotate(Vector3.forward);
                 yield return null;
             };
-            if ((int)(loginRequest.responseCode / 100) == 2)
-            {
-                var cookieValues = loginRequest.GetResponseHeader("set-cookie").Split("; ");
-                if (cookieValues[0].StartsWith("csrftoken="))
-                {
-                    var csrf = cookieValues[0].Substring("csrftoken=".Length);
-                    loginRequest = UnityWebRequest.Post($"{scheme}://{host}/auth/login/", new Dictionary<string, string>
-                    {
-                        ["csrfmiddlewaretoken"] = csrf,
-                        ["username"] = UsernameInputField.text,
-                        ["password"] = PasswordInputField.text,
-                    });
-                    loginRequest.useHttpContinue = false;
-                    loginRequest.redirectLimit = 0;
-                    loginRequest.timeout = 60;
-                    loginRequest.SendWebRequest();
-                    while (!loginRequest.isDone)
-                    {
-                        LoadingIcon.transform.Rotate(Vector3.forward);
-                        yield return null;
-                    };
 
-                    string sessionCookie = loginRequest.GetResponseHeader("set-cookie").Split("sessionid=")[1];
-                    PlayerPrefs.SetString("SESSION", sessionCookie.Split("; ")[0]);
-                    PlayerPrefs.SetString("EXPIRES", sessionCookie.Split("expires=")[1].Split("; ")[0]);
+#if UNITY_EDITOR
+            string cookie = loginRequest.GetResponseHeader("Set-Cookie");
+            if (cookie != null && cookie.Contains("sessionid="))
+                PlayerPrefs.SetString("SESSION", cookie.Split("sessionid=")[1].Split("; ")[0]);
+#endif
 
-                    if (!Authenticate())
-                    {
-                        ErrorMessage.text = "Try again";
-                    }
-                }
-            }
-            else
-            {
-                ErrorMessage.text = loginRequest.error;
-            }
+            ErrorMessage.text = loginRequest.error;
+            StopAllCoroutines();
+            StartCoroutine(Authenticate());
         }
         finally
         {
