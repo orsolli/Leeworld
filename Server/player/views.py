@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from . import models
@@ -54,8 +54,8 @@ def register(request: HttpRequest):
     messages.add_message(request, level, f'You are limited to {LIMIT} profile{"s" if LIMIT != 1 else ""}')
     return redirect('/')
 
-def profile(request: HttpRequest):
-    return render(request, 'profile.html', {
+def home(request: HttpRequest):
+    return render(request, 'home.html', {
         'can_register': LIMIT,
     })
 
@@ -63,6 +63,14 @@ def profile(request: HttpRequest):
 def profiles_list(request: HttpRequest):
     players = models.Player.objects.filter(user=request.user.id)
     return HttpResponse(', '.join([str(p.id) for p in players]))
+
+@login_required
+def profile(request: HttpRequest, id: str):
+    player = models.Player.objects.get(id=id)
+    return JsonResponse({
+        'mesh': player.mesh,
+        'builder': player.builder,
+    })
 
 @csrf_exempt
 def login_user(request: HttpRequest):

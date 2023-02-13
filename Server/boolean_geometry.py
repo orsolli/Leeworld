@@ -5,16 +5,19 @@ from csg.geom import Polygon, Vertex, Vector
 
 
 
-def intersect(id: str, mesh: str, players: tuple[str, str], queue: Queue):
+def intersect(id: str, mesh: str, players: tuple[str, str, bool], queue: Queue):
     """
     players = (mesh, position)
     position = x,y,z
-    x = 10 => 0, 11 => 0 + 1/8, 27 => 1 + 7/8, 87 => 7 + 7/8, 101 => 0 + 1/64, 111 => 0 + 1/8 + 1/64
+    x = 10 => 1, 11 => 1 + 1/8, 27 => 2 + 7/8, 87 => 8 + 7/8, 101 => 1 + 1/64, 111 => 1 + 1/8 + 1/64
     """
     start_time = monotonic()
     a = CSG.fromPolygons(parseOBJ(mesh))
-    for player_mesh, position in players:
-        a = a - CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
+    for player_mesh, position, build in players:
+        if build:
+            a = a + CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
+        else:
+            a = a - CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
 
     verts, cells, count = a.toVerticesAndPolygons()
 
@@ -96,17 +99,17 @@ def parsePos(position: str):
     xs, ys, zs = position.split(',')
     x, y, z = 0,0,0
 
-    while xs[::-1]:
-        x = x/8 + int(xs, base=8)
-        xs = xs[1:]
+    while xs:
+        x = x/8 + int(xs[-1], base=8)
+        xs = xs[:-1]
 
-    while ys[::-1]:
-        y = y/8 + int(ys, base=8)
-        ys = ys[1:]
+    while ys:
+        y = y/8 + int(ys[-1], base=8)
+        ys = ys[:-1]
 
-    while zs[::-1]:
-        z = z/8 + int(zs, base=8)
-        zs = zs[1:]
+    while zs:
+        z = z/8 + int(zs[-1], base=8)
+        zs = zs[:-1]
 
     return Vector(x, y, z)
 

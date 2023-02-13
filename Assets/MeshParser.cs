@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class MeshParser
 {
-    public static Mesh ParseOBJ(string objString)
+    public static Mesh ParseOBJ(string objString, float scale)
     {
         // Create a new mesh
         Mesh mesh = new Mesh();
@@ -37,7 +37,7 @@ public static class MeshParser
                 float x = float.Parse(vertexData[1], CultureInfo.InvariantCulture.NumberFormat);
                 float y = float.Parse(vertexData[2], CultureInfo.InvariantCulture.NumberFormat);
                 float z = float.Parse(vertexData[3], CultureInfo.InvariantCulture.NumberFormat);
-                objVertices.Add(new Vector3(x, y, z) / 8);
+                objVertices.Add(new Vector3(x, y, z) * scale);
             }
             else if (line.StartsWith("vn "))
             {

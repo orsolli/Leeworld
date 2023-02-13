@@ -76,7 +76,7 @@ public class Block : MonoBehaviour
             if ((int)(meshRequest.responseCode / 100) == 2)
             {
                 while (!meshRequest.downloadHandler.isDone) yield return 0;
-                meshFilter.mesh = MeshParser.ParseOBJ(meshRequest.downloadHandler.text);
+                meshFilter.mesh = MeshParser.ParseOBJ(meshRequest.downloadHandler.text, 1f / 8);
                 meshCollider.sharedMesh = meshFilter.mesh;
             }
             else

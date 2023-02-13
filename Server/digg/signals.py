@@ -61,7 +61,7 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
             return False, [player.id], 5
         print(f"Go! {[p.player.id for p in workers]}")
         for worker in workers:
-            tools.append((worker.player.mesh, worker.position))
+            tools.append((worker.player.mesh, worker.position, worker.player.builder))
             models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
             worker.delete()
         queue = Queue()

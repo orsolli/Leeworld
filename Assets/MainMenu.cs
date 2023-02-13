@@ -8,6 +8,7 @@ public class MainMenu : MonoBehaviour
 {
     public TMPro.TMP_InputField PlayerInputField;
     public TMPro.TMP_Dropdown PlayerInputSelector;
+    private bool loading = false;
 
     void Start()
     {
@@ -15,6 +16,7 @@ public class MainMenu : MonoBehaviour
         Cursor.visible = true;
         PlayerInputField.text = PlayerPrefs.GetString("PLAYER");
         StartCoroutine(GetProfiles());
+        StartCoroutine(GetProfile(PlayerInputField.text));
     }
 
     void Update()
@@ -71,19 +73,61 @@ public class MainMenu : MonoBehaviour
         }
     }
 
+    class Profile
+    {
+        public string mesh;
+        public bool builder;
+    }
+
+    private IEnumerator GetProfile(string id)
+    {
+        loading = true;
+        try
+        {
+            if (id.Equals("")) yield break;
+            var scheme = "https";
+            if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
+                scheme = "http";
+            string host = PlayerPrefs.GetString("SERVER", "localhost");
+            UnityWebRequest loginRequest = UnityWebRequest.Get($"{scheme}://{host}/profile/{id}/");
+            loginRequest.downloadHandler = new DownloadHandlerBuffer();
+            loginRequest.useHttpContinue = false;
+            loginRequest.redirectLimit = 0;
+            loginRequest.timeout = 60;
+            loginRequest.SendWebRequest();
+            while (!loginRequest.isDone) yield return null;
+            if ((int)(loginRequest.responseCode / 100) == 2)
+            {
+                while (!loginRequest.downloadHandler.isDone) yield return null;
+                var res = loginRequest.downloadHandler.text;
+                var json = JsonUtility.FromJson<Profile>(res);
+                if (id.Equals(PlayerPrefs.GetString("PLAYER")))
+                {
+                    PlayerPrefs.SetString("PLAYER_MESH", json.mesh);
+                    PlayerPrefs.SetString("PLAYER_BUILDER", json.builder.ToString());
+                }
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
     public void SetPlayer(string player)
     {
         PlayerPrefs.SetString("PLAYER", player.Trim());
+        StartCoroutine(GetProfile(player.Trim()));
     }
 
     public void SelectPlayer(int playerIndex)
     {
-        PlayerPrefs.SetString("PLAYER", PlayerInputSelector.options[playerIndex].text);
+        SetPlayer(PlayerInputSelector.options[playerIndex].text);
     }
 
     public void Play()
     {
-        if (!PlayerPrefs.GetString("PLAYER").Contains(","))
+        if (!PlayerPrefs.GetString("PLAYER").Equals("") && !loading)
             SceneManager.LoadScene("OpenWorld");
     }
 

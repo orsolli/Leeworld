@@ -2,7 +2,7 @@ from django.db import models
 from player.models import Player
 
 class Block(models.Model):
-    mesh=models.CharField(max_length=2**24)
+    mesh=models.TextField()
     position=models.CharField(primary_key=True, max_length=100)
 
 

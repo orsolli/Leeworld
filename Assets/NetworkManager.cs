@@ -52,7 +52,7 @@ public class NetworkManager : MonoBehaviour
     private string GetUpdate(Vector3 pos)
     {
         var block_pos = pos / 8;
-        var block = $"{(int)block_pos.x}_{(int)block_pos.y}_{(int)block_pos.z}";
+        var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
         var position = $"{Int8.ToUInt8(pos.x % 8)}_{Int8.ToUInt8(pos.y % 8)}_{Int8.ToUInt8(pos.z % 8)}";
         return $"{block}|{position}";
     }
