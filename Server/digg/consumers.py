@@ -52,8 +52,8 @@ class BlockConsumer(JsonWebsocketConsumer):
                 player_id=self.player_id,
             )
         elif action == 'digg':
-            block = text_data_json['block']
-            position = text_data_json['position']
+            block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
+            position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'].split('_')])
             results = self.signals.terraformer_signal.send(
                 sender=None,
                 action=self.signals.DIGG if self.duration is None else self.signals.PING,
@@ -68,7 +68,7 @@ class BlockConsumer(JsonWebsocketConsumer):
             if self.duration is None:
                 self.duration = 5 if int(self.player_id) in finishers else max(0, 5 + (5 - time))
                 async_to_sync(self.channel_layer.group_send)(
-                    "cursors", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
+                    "players", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
                 )
             if done:
                 async_to_sync(self.channel_layer.group_send)(
@@ -81,7 +81,7 @@ class BlockConsumer(JsonWebsocketConsumer):
                 self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 + (5 - time)) / self.duration))}:queue', 'utf8'))
 
         async_to_sync(self.channel_layer.group_send)(
-            "cursors", {"type": "cursor_action", "player": self.player_id, "action": action, "block": block}
+            "players", {"type": "cursor_action", "player": self.player_id, "action": action, "block": block}
         )
 
     # Receive message from block group
@@ -100,7 +100,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
         if not authenticate(self.user, self.player_id):
             return self.close(3000)
         self.players_group = "players"
-        self.block = '0,0,0'
+        self.block = '0_0_0'
         self.throttle = 0
 
         async_to_sync(self.channel_layer.group_add)(
@@ -122,7 +122,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
     def receive(self, bytes_data):
         text_data_json = json.loads(bytes_data)
         part = text_data_json['part']
-        block = text_data_json['block']
+        block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
         if part == 'player':
             self.block = block
         position = text_data_json['position']
@@ -133,8 +133,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
     # Receive position from player group
     def player_position(self, event):
         player = event["player"]
-        block = event["block"]
-        position = event["position"]
+        block = '_'.join([str(int(p)) for p in event['block'].split('_')])
+        position = '_'.join([str(int(p)) for p in event['position'].split('_')])
         if self.player_id != player:
             self.throttle -= 1.1
             if self.throttle < 0:
@@ -144,8 +144,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
     # Receive position from cursors group
     def cursor_position(self, event):
         player = event["player"]
-        block = event["block"]
-        position = event["position"]
+        block = '_'.join([str(int(p)) for p in event['block'].split('_')])
+        position = '_'.join([str(int(p)) for p in event['position'].split('_')])
         if self.player_id != player:
             self.throttle -= 1.1
             if self.throttle < 0:
@@ -156,12 +156,12 @@ class PlayerConsumer(JsonWebsocketConsumer):
     def cursor_action(self, event):
         player = event["player"]
         action = event["action"]
-        block = event["action"]
+        block = event["block"]
         if self.player_id != player:
             self.throttle -= 1.1
-            if self.throttle < 0:
-                self.throttle = self.distance(block)
+            if self.throttle < 0 or block is None:
                 self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
+                self.throttle = self.distance(block) if block else 0
 
     # Receive disconnect from block group
     def player_disconnect(self, event):

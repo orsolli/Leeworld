@@ -220,7 +220,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:
@@ -314,7 +314,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
 --- !u!1 &931150931 stripped
 GameObject:
@@ -408,7 +408,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &963194229
 Light:
@@ -527,6 +527,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   progress: 0
+  gridSize: {x: 0, y: 0, z: 0}
+  server: {fileID: 0}
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -551,6 +553,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2059282662}
   - component: {fileID: 2059282661}
+  - component: {fileID: 2059282663}
   m_Layer: 0
   m_Name: Server
   m_TagString: Untagged
@@ -583,8 +586,20 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2059282663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2059282660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d92fc384764bdc6db85e227198fde67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2145239919
 GameObject:
   m_ObjectHideFlags: 0
@@ -632,7 +647,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &3398520152367921945
 PrefabInstance:
@@ -647,7 +662,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3398520153181603662, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3398520153181603662, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}
       propertyPath: m_LocalPosition.x

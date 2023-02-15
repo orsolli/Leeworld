@@ -60,7 +60,8 @@ public class NetworkManager : MonoBehaviour
     public void Destroy()
     {
         StopAllCoroutines();
-        client.Close();
+        if (client == null || client.State != WebSocketState.Open) return;
+        client.CancelConnection();
     }
 
     private async void Connect()

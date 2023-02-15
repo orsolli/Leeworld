@@ -12,7 +12,7 @@ def intersect(id: str, mesh: str, players: tuple[str, str, bool], queue: Queue):
     x = 10 => 1, 11 => 1 + 1/8, 27 => 2 + 7/8, 87 => 8 + 7/8, 101 => 1 + 1/64, 111 => 1 + 1/8 + 1/64
     """
     start_time = monotonic()
-    a = CSG.fromPolygons(parseOBJ(mesh))
+    a = CSG.fromPolygons(parseOBJ(mesh)) if mesh else CSG()
     for player_mesh, position, build in players:
         if build:
             a = a + CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))

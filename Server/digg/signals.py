@@ -19,7 +19,7 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
     player = models.Player.objects.get(id=player_id)
     block_position, position = kwargs.get('block_position'), kwargs.get('position')
     if block_position:
-        block = models.Block.objects.get(position=block_position)
+        block, _ = models.Block.objects.get_or_create(defaults={'mesh':models.default_block_mesh if '-' in block_position else ''}, position=block_position)
     if action is DIGG:
         if models.Terraformer.objects.filter(player__id=player_id).exists():
             if block.position not in processes or not models.Terraformer.objects.filter(player__id=player_id, block=block, position=position).exists():

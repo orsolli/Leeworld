@@ -12,7 +12,6 @@ public class ChunkSpawner : MonoBehaviour
     public static int worldSize = 255;
     private int chunkSize = 8;
     private Vector3 lastPos;
-    WebSocket client;
     public Server server;
 
     private GameObject[,,] chunks = new GameObject[worldSize, worldSize, worldSize];
@@ -20,58 +19,12 @@ public class ChunkSpawner : MonoBehaviour
     void Start()
     {
         chunkSize = (int)chunkPrefab.transform.localScale.x;
-        Connect();
         StartCoroutine(Spawn());
-    }
-
-    void Update()
-    {
-#if !UNITY_WEBGL || UNITY_EDITOR
-        client.DispatchMessageQueue();
-#endif
-    }
-
-    void Receive(byte[] data)
-    {
-        string res = Encoding.ASCII.GetString(data);
-        Debug.Log(res);
-        if (res.StartsWith("digg:"))
-        {
-            var block_id = res.Split(':')[1].Split('_');
-            var chunk = chunks[ToIndex(int.Parse(block_id[0])), ToIndex(int.Parse(block_id[1])), ToIndex(int.Parse(block_id[2]))];
-            if (chunk == null) return;
-
-            var block = chunk.GetComponent<Block>();
-            var ptc = res.Split(':')[2];
-            block.progress = int.Parse(ptc) / 100f;
-            if (ptc.Equals("100"))
-            {
-                block.progress = 0;
-                block.StopDigg();
-            }
-        }
-        else if (res.StartsWith("block:"))
-        {
-            var block_id = res.Split(':')[1].Split('_');
-            var chunk = chunks[ToIndex(int.Parse(block_id[0])), ToIndex(int.Parse(block_id[1])), ToIndex(int.Parse(block_id[2]))];
-            if (chunk == null) return;
-            StartCoroutine(chunk.GetComponent<Block>().UpdateMesh(10));
-        }
     }
 
     public void Destroy()
     {
         StopAllCoroutines();
-    }
-
-    private void Connect()
-    {
-        client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/", server.GetHeaders());
-
-        client.OnMessage += Receive;
-        client.OnError += (e) => { Debug.LogError(e); Destroy(); };
-        client.OnClose += (e) => { Debug.Log(e); Destroy(); };
-        client.Connect();
     }
 
     private IEnumerator<int> Spawn()
@@ -136,8 +89,6 @@ public class ChunkSpawner : MonoBehaviour
                 {
                     var chunk = GameObject.Instantiate(chunkPrefab, plan.position, Quaternion.identity);
                     var block = chunk.GetComponent<Block>();
-                    block.client = client;
-                    block.server = server;
                     chunks[plan.x, plan.y, plan.z] = chunk;
                     yield return 0;
                 }
