@@ -59,11 +59,10 @@ public class NetworkManager : MonoBehaviour
         return $"{block}|{position}";
     }
 
-    private void OnDestroy()
+    private async void OnDestroy()
     {
-        StopAllCoroutines();
-        if (client == null || client.State != WebSocketState.Open) return;
-        client.CancelConnection();
+        if (client != null && client.State == WebSocketState.Open)
+            await client.Close();
     }
 
     private async void Connect()
@@ -99,8 +98,8 @@ public class NetworkManager : MonoBehaviour
             else
             {
                 otherPlayer = GameObject.Instantiate(playerPrefab, position, Quaternion.identity);
-                StartCoroutine(GetMesh(player, otherPlayer));
                 otherPlayers.Add(player, otherPlayer);
+                StartCoroutine(GetMesh(player, otherPlayer));
                 lastPositionReport = "";
                 lastCursorReport = "";
             }
