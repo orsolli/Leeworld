@@ -22,7 +22,7 @@ public class ChunkSpawner : MonoBehaviour
         StartCoroutine(Spawn());
     }
 
-    public void Destroy()
+    private void OnDestroy()
     {
         StopAllCoroutines();
     }

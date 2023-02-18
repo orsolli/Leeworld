@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using NativeWebSocket;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
@@ -19,7 +21,7 @@ public class NetworkManager : MonoBehaviour
         server = FindObjectOfType<Server>(true);
         if (server.GetPlayer() == null || server.GetPlayer() == "")
         {
-            Destroy();
+            SceneManager.LoadScene("MainMenu");
             return;
         }
         Connect();
@@ -53,11 +55,11 @@ public class NetworkManager : MonoBehaviour
     {
         var block_pos = pos / 8;
         var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
-        var position = $"{Int8.ToUInt8(pos.x % 8)}_{Int8.ToUInt8(pos.y % 8)}_{Int8.ToUInt8(pos.z % 8)}";
+        var position = $"{Int8.ToUInt8((pos.x % 8 + 8) % 8)}_{Int8.ToUInt8((pos.y % 8 + 8) % 8)}_{Int8.ToUInt8((pos.z % 8 + 8) % 8)}";
         return $"{block}|{position}";
     }
 
-    public void Destroy()
+    private void OnDestroy()
     {
         StopAllCoroutines();
         if (client == null || client.State != WebSocketState.Open) return;
@@ -76,7 +78,6 @@ public class NetworkManager : MonoBehaviour
         client.OnClose += (e) =>
         {
             Debug.Log(e);
-            SceneManager.LoadScene("MainMenu");
         };
         await client.Connect();
     }
@@ -98,6 +99,7 @@ public class NetworkManager : MonoBehaviour
             else
             {
                 otherPlayer = GameObject.Instantiate(playerPrefab, position, Quaternion.identity);
+                StartCoroutine(GetMesh(player, otherPlayer));
                 otherPlayers.Add(player, otherPlayer);
                 lastPositionReport = "";
                 lastCursorReport = "";
@@ -133,9 +135,29 @@ public class NetworkManager : MonoBehaviour
             OtherPlayer otherPlayer;
             if (otherPlayers.TryGetValue(player, out otherPlayer))
             {
-                Destroy(otherPlayer);
+                Destroy(otherPlayer.gameObject);
                 otherPlayers.Remove(player);
             }
+        }
+    }
+
+
+
+    private IEnumerator GetMesh(string id, OtherPlayer otherPlayer)
+    {
+        UnityWebRequest loginRequest = UnityWebRequest.Get($"{server.GetHttpScheme()}://{server.GetHost()}/profile/{id}/");
+        loginRequest.downloadHandler = new DownloadHandlerBuffer();
+        loginRequest.useHttpContinue = false;
+        loginRequest.redirectLimit = 0;
+        loginRequest.timeout = 60;
+        loginRequest.SendWebRequest();
+        while (!loginRequest.isDone) yield return null;
+        if ((int)(loginRequest.responseCode / 100) == 2)
+        {
+            while (!loginRequest.downloadHandler.isDone) yield return null;
+            var res = loginRequest.downloadHandler.text;
+            var json = JsonUtility.FromJson<Profile>(res);
+            otherPlayer.GetCursor().transform.localScale = MeshParser.ParseOBJ(json.mesh, 1).bounds.max;
         }
     }
 

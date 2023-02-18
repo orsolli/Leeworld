@@ -26,7 +26,7 @@ public class Block : MonoBehaviour
         StartCoroutine(UpdateMesh(2));
     }
 
-    void Destroy()
+    private void OnDestroy()
     {
         client.client.OnMessage -= OnMessage;
     }

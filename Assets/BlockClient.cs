@@ -1,5 +1,6 @@
 using NativeWebSocket;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BlockClient : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class BlockClient : MonoBehaviour
 #endif
     }
 
-    public void Destroy()
+    private void OnDestroy()
     {
         if (client != null && client.State == WebSocketState.Open)
         {
@@ -31,8 +32,15 @@ public class BlockClient : MonoBehaviour
     {
         client = new WebSocket($"{server.GetWsScheme()}://{server.GetHost()}/ws/blocks/{server.GetPlayer()}/", server.GetHeaders());
 
-        client.OnError += (e) => { Debug.LogError(e); Destroy(); };
-        client.OnClose += (e) => { Debug.Log(e); Destroy(); };
+        client.OnError += (e) =>
+        {
+            Debug.LogError(e);
+            SceneManager.LoadScene("MainMenu");
+        };
+        client.OnClose += (e) =>
+        {
+            Debug.Log(e);
+        };
         client.Connect();
     }
 }

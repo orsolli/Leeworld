@@ -66,7 +66,7 @@ public class Digger : MonoBehaviour
         progressBlock.SetLocalPositionAndRotation(progressBlock.localPosition, Quaternion.AngleAxis(90 * progress, Vector3.up));
     }
 
-    void Destroy()
+    private void OnDestroy()
     {
         client.OnMessage -= OnMessage;
     }
@@ -113,10 +113,10 @@ public class Digger : MonoBehaviour
     {
         while (client == null || client.State != WebSocketState.Open) yield return 0;
         stop = false;
-        Vector3 blockPos = new Vector3((int)(previewBlock.position.x / 8), (int)(previewBlock.position.y / 8), (int)(previewBlock.position.z / 8));
-        Vector3 previewPos = previewBlock.position - blockPos * 8;
-        string position = $"{Int8.ToUInt8(previewPos.x)}_{Int8.ToUInt8(previewPos.y)}_{Int8.ToUInt8(previewPos.z)}";
-        string block = $"{blockPos.x}_{blockPos.y}_{blockPos.z}";
+        Vector3 pos = previewBlock.position;
+        var block_pos = pos / 8;
+        var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
+        var position = $"{Int8.ToUInt8((pos.x % 8 + 8) % 8)}_{Int8.ToUInt8((pos.y % 8 + 8) % 8)}_{Int8.ToUInt8((pos.z % 8 + 8) % 8)}";
         while (!stop && progress < 1)
         {
             DateTime nextPoll = DateTime.UtcNow.AddMilliseconds(100);

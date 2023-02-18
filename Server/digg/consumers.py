@@ -53,7 +53,7 @@ class BlockConsumer(JsonWebsocketConsumer):
             )
         elif action == 'digg':
             block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
-            position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'].split('_')])
+            position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'][::-1].split('_')])[::-1]
             results = self.signals.terraformer_signal.send(
                 sender=None,
                 action=self.signals.DIGG if self.duration is None else self.signals.PING,
@@ -125,7 +125,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
         block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
         if part == 'player':
             self.block = block
-        position = text_data_json['position']
+        position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'][::-1].split('_')])[::-1]
         async_to_sync(self.channel_layer.group_send)(
             self.players_group, {"type": f"{part}_position", "player": self.player_id, "block": block, "position": position}
         )
@@ -134,7 +134,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
     def player_position(self, event):
         player = event["player"]
         block = '_'.join([str(int(p)) for p in event['block'].split('_')])
-        position = '_'.join([str(int(p)) for p in event['position'].split('_')])
+        position = event['position']
         if self.player_id != player:
             self.throttle -= 1.1
             if self.throttle < 0:
@@ -145,7 +145,7 @@ class PlayerConsumer(JsonWebsocketConsumer):
     def cursor_position(self, event):
         player = event["player"]
         block = '_'.join([str(int(p)) for p in event['block'].split('_')])
-        position = '_'.join([str(int(p)) for p in event['position'].split('_')])
+        position = event['position']
         if self.player_id != player:
             self.throttle -= 1.1
             if self.throttle < 0:

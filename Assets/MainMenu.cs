@@ -73,12 +73,6 @@ public class MainMenu : MonoBehaviour
         }
     }
 
-    class Profile
-    {
-        public string mesh;
-        public bool builder;
-    }
-
     private IEnumerator GetProfile(string id)
     {
         loading = true;
