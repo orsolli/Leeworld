@@ -15,7 +15,7 @@ class BlockConsumer(JsonWebsocketConsumer):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
-            return self.close(3000)
+            self.user = None
 
         self.block_group_name = "blocks"
         self.duration = None
@@ -27,19 +27,23 @@ class BlockConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
-        if not self.block_group_name:
+        async_to_sync(self.channel_layer.group_discard)(
+            self.block_group_name, self.channel_name
+        )
+        if self.user is None:
             return
+
         self.duration = None
         self.signals.terraformer_signal.send(
             sender=None,
             action=self.signals.STOP,
             player_id=self.player_id,
         )
-        async_to_sync(self.channel_layer.group_discard)(
-            self.block_group_name, self.channel_name
-        )
 
     def receive(self, bytes_data):
+        if self.user is None:
+            return self.close(3000)
+
         text_data_json = json.loads(bytes_data)
         action = text_data_json["action"]
         self.player_id=text_data_json['player']
@@ -98,7 +102,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.user = self.scope["user"]
         if not authenticate(self.user, self.player_id):
-            return self.close(3000)
+            self.user = None
+
         self.players_group = "players"
         self.block = '0_0_0'
         self.throttle = 0
@@ -110,8 +115,6 @@ class PlayerConsumer(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
-        if not self.players_group:
-            return
         async_to_sync(self.channel_layer.group_send)(
             self.players_group, {"type": "player_disconnect", "player": self.player_id}
         )
@@ -125,6 +128,8 @@ class PlayerConsumer(JsonWebsocketConsumer):
         block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
         if part == 'player':
             self.block = block
+        elif self.user is None:
+            return self.close(3000) # Unauthenticated users can not point
         position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'][::-1].split('_')])[::-1]
         async_to_sync(self.channel_layer.group_send)(
             self.players_group, {"type": f"{part}_position", "player": self.player_id, "block": block, "position": position}

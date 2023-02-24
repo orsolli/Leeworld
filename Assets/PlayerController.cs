@@ -14,20 +14,18 @@ public class PlayerController : MonoBehaviour
     private Vector3 moveDirection = Vector3.zero;
     private float yaw = 0.0f;
     private float pitch = 0.0f;
+    CharacterController controller;
 
     void Start()
     {
+        controller = GetComponentInParent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            SceneManager.LoadScene("MainMenu");
-        }
-        else if (!started)
+        if (!started)
         {
             if (Input.GetButton("Jump"))
             {
@@ -41,14 +39,13 @@ public class PlayerController : MonoBehaviour
         // Rotate the character based on mouse movement
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
         pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * mouseSensitivity, pitchMin, pitchMax);
-        transform.eulerAngles = new Vector3(pitch, yaw, 0.0f);
+        controller.transform.eulerAngles = new Vector3(pitch, yaw, 0.0f);
 
-        CharacterController controller = GetComponent<CharacterController>();
         if (controller.isGrounded)
         {
             // We are grounded, so recalculate move direction based on inputs
             moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-            moveDirection = transform.TransformDirection(moveDirection);
+            moveDirection = controller.transform.TransformDirection(moveDirection);
             moveDirection *= speed;
 
             if (Input.GetButton("Jump"))

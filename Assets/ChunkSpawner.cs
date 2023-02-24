@@ -11,18 +11,18 @@ public class ChunkSpawner : MonoBehaviour
     public int memory = 128;
     public static int worldSize = 255;
     private int chunkSize = 8;
-    private Vector3 lastPos;
+    public Vector3 lastPos;
     public Server server;
 
     private GameObject[,,] chunks = new GameObject[worldSize, worldSize, worldSize];
 
-    void Start()
+    void OnEnable()
     {
         chunkSize = (int)chunkPrefab.transform.localScale.x;
         StartCoroutine(Spawn());
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         StopAllCoroutines();
     }
@@ -33,10 +33,11 @@ public class ChunkSpawner : MonoBehaviour
         while (true)
         {
             var pos = target.transform.position;
-            if (lastPos == null || Vector3.Distance(lastPos, pos) > chunkSize)
+            if (Vector3.Distance(lastPos, pos) > chunkSize)
             {
+                var dir = pos - lastPos;
                 lastPos = pos;
-                //Debug.Log($"ChunkSpawner {pos}");
+                pos += dir*2;
                 var x = (int)(pos.x / chunkSize);
                 var y = (int)(pos.y / chunkSize);
                 var z = (int)(pos.z / chunkSize);
@@ -91,6 +92,7 @@ public class ChunkSpawner : MonoBehaviour
                     var block = chunk.GetComponent<Block>();
                     chunks[plan.x, plan.y, plan.z] = chunk;
                     yield return 0;
+                    if (Vector3.Distance(lastPos, target.transform.position) > chunkSize) break;
                 }
             }
             yield return 0;
@@ -109,7 +111,7 @@ public class ChunkSpawner : MonoBehaviour
                     for (int zi = 0; zi < worldSize; zi++)
                     {
                         var block = chunks[xi, yi, zi];
-                        if (block != null && Vector3.Distance(lastPos, block.transform.position) > (memory + 1) * chunkSize)
+                        if (block != null && lastPos != null && Vector3.Distance(lastPos, block.transform.position) > (memory + 1) * chunkSize)
                         {
                             //Debug.Log($"Destroying chunk {block.transform.position}");
                             GameObject.Destroy(block);

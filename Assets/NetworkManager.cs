@@ -4,7 +4,6 @@ using System.Text;
 using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -16,14 +15,9 @@ public class NetworkManager : MonoBehaviour
     private string lastPositionReport = "";
     private string lastCursorReport = "";
 
-    void Start()
+    void OnEnable()
     {
         server = FindObjectOfType<Server>(true);
-        if (server.GetPlayer() == null || server.GetPlayer() == "")
-        {
-            SceneManager.LoadScene("MainMenu");
-            return;
-        }
         Connect();
     }
 
@@ -40,7 +34,7 @@ public class NetworkManager : MonoBehaviour
         }
 
         var cursor = GetUpdate(cursorTransform.transform.position);
-        if (!lastCursorReport.Equals(cursor))
+        if (!lastCursorReport.Equals(cursor) && PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
         {
             await client.Send(Encoding.ASCII.GetBytes(
                 $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
@@ -56,10 +50,16 @@ public class NetworkManager : MonoBehaviour
         var block_pos = pos / 8;
         var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
         var position = $"{Int8.ToUInt8((pos.x % 8 + 8) % 8)}_{Int8.ToUInt8((pos.y % 8 + 8) % 8)}_{Int8.ToUInt8((pos.z % 8 + 8) % 8)}";
+
+        if (!PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
+        {
+            var acuratePos = position.Split('_');
+            position = $"{acuratePos[0].Substring(0, 1)}_{acuratePos[1].Substring(0, 1)}_{acuratePos[2].Substring(0, 1)}";
+        }
         return $"{block}|{position}";
     }
 
-    private async void OnDestroy()
+    private async void OnDisable()
     {
         if (client != null && client.State == WebSocketState.Open)
             await client.Close();
@@ -72,7 +72,6 @@ public class NetworkManager : MonoBehaviour
         client.OnError += (e) =>
         {
             Debug.LogError(e);
-            SceneManager.LoadScene("MainMenu");
         };
         client.OnClose += (e) =>
         {

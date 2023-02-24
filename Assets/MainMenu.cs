@@ -23,7 +23,7 @@ public class MainMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Application.Quit();
+            Close();
         }
         else if (Input.GetKeyUp(KeyCode.Tab))
         {
@@ -121,8 +121,17 @@ public class MainMenu : MonoBehaviour
 
     public void Play()
     {
-        if (!PlayerPrefs.GetString("PLAYER").Equals("") && !loading)
+        if (!loading)
+        {
+            if (PlayerPrefs.GetString("PLAYER").Equals(""))
+                PlayerPrefs.SetString("PLAYER", "0");
             SceneManager.LoadScene("OpenWorld");
+        }
+    }
+
+    public void Close()
+    {
+        SceneManager.UnloadSceneAsync("MainMenu");
     }
 
     public void Logout()
@@ -138,6 +147,6 @@ public class MainMenu : MonoBehaviour
         loginRequest.redirectLimit = 0;
         loginRequest.timeout = 120;
         loginRequest.SendWebRequest();
-        SceneManager.LoadScene("Login");
+        Play();
     }
 }

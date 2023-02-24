@@ -7,20 +7,29 @@ public class Server : MonoBehaviour
     private string host;
     private string session;
     private bool secure = true;
-    System.Diagnostics.Process process;
 
-    void Awake()
+    void OnEnable()
     {
         if (PlayerPrefs.GetString("SECURE").Equals(false.ToString()))
             secure = false;
-        player = PlayerPrefs.GetString("PLAYER", player);
-        host = PlayerPrefs.GetString("SERVER", host);
-        session = PlayerPrefs.GetString("SESSION", session);
+        player = PlayerPrefs.GetString("PLAYER");
+        if (player.Equals("")) {
+            PlayerPrefs.SetString("PLAYER", "0");
+            player = "0";
+        }
+
+        host = PlayerPrefs.GetString("SERVER");
+        if (host.Equals("")) {
+            host = LoginMenu.DEFAULT_SEREVR;
+            PlayerPrefs.SetString("SERVER", LoginMenu.DEFAULT_SEREVR);
+            secure = true;
+        }
+        session = PlayerPrefs.GetString("SESSION");
     }
 
     public string GetPlayer()
     {
-        return player;
+        return player.Equals("0") ? PlayerPrefs.GetString("PLAYER", "0") : player;
     }
     public string GetHost()
     {

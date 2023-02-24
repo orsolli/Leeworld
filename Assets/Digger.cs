@@ -5,9 +5,39 @@ using System.Text;
 using System.Threading;
 using NativeWebSocket;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class Digger : MonoBehaviour
+public class Digger : PauseManager
 {
+    public static string DEFAULT_MESH = @"v 0 0 0
+v 0 0 0.001
+v 0 0.001 0
+v 0 0.001 0.001
+v 0.001 0 0
+v 0.001 0 0.001
+v 0.001 0.001 0
+v 0.001 0.001 0.001
+
+vn 1 0 0
+vn -1 0 0
+vn 0 1 0
+vn 0 -1 0
+vn 0 0 1
+vn 0 0 -1
+
+f 1//2 2 3//2
+f 2 4//2 3//2
+f 2//5 6//5 4//5
+f 4//5 6//5 8//5
+f 1//4 5//4 2//4
+f 2//4 5//4 6//4
+f 3 8//3 7//3
+f 3 4//3 8//3
+f 1//6 3//6 7//6
+f 1//6 7//6 5//6
+f 5//1 8//1 6//1
+f 5//1 7//1 8//1
+";
     public Vector3 offset;
     public GameObject previewBlock;
     public Transform progressBlock;
@@ -18,27 +48,40 @@ public class Digger : MonoBehaviour
     private bool stop = false;
     private int sign;
     public Vector3 gridSize;
-    public Server server;
+    private Server server;
     public WebSocket client;
+    public PauseManager pm;
 
-    void Start()
+    void OnEnable()
     {
         server = FindObjectOfType<Server>(true);
         client = FindObjectOfType<BlockClient>(true).client;
         client.OnMessage += OnMessage;
 
-        var mesh = MeshParser.ParseOBJ(PlayerPrefs.GetString("PLAYER_MESH"), 1);
-
-        sign = PlayerPrefs.GetString("PLAYER_BUILDER").Equals(true.ToString()) ? -1 : 1;
+        var mesh = MeshParser.ParseOBJ(PlayerPrefs.GetString("PLAYER_MESH", DEFAULT_MESH), 1);
         gridSize = mesh.bounds.max;
         previewBlock.transform.localScale = gridSize;
+
+        sign = PlayerPrefs.GetString("PLAYER_BUILDER").Equals(false.ToString()) ? 1 : -1;
     }
 
     async void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Additive);
+            Pause();
+            return;
+        }
         if (diggingCoroutine == null && MovePreviewBlock() && Input.GetMouseButtonDown(0))
         {
             progress = 0;
+            if (!PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
+            {
+                SceneManager.LoadScene("Login", LoadSceneMode.Additive);
+                Pause();
+                return;
+            }
             diggingCoroutine = Digg(previewBlock.transform);
         }
         else if (Input.GetMouseButtonUp(0))
@@ -66,7 +109,7 @@ public class Digger : MonoBehaviour
         progressBlock.SetLocalPositionAndRotation(progressBlock.localPosition, Quaternion.AngleAxis(90 * progress, Vector3.up));
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         client.OnMessage -= OnMessage;
     }

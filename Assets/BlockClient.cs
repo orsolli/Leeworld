@@ -1,12 +1,13 @@
 using NativeWebSocket;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class BlockClient : MonoBehaviour
+public class BlockClient : PauseManager
 {
     public WebSocket client;
     private Server server;
 
-    void Start()
+    void OnEnable()
     {
         server = FindObjectOfType<Server>(true);
         Connect();
@@ -19,7 +20,7 @@ public class BlockClient : MonoBehaviour
 #endif
     }
 
-    private async void OnDestroy()
+    private async void OnDisable()
     {
         if (client != null && client.State == WebSocketState.Open)
         {
@@ -33,7 +34,8 @@ public class BlockClient : MonoBehaviour
 
         client.OnError += (e) =>
         {
-            Debug.LogError(e);
+            SceneManager.LoadScene("Login", LoadSceneMode.Additive);
+            Pause();
         };
         client.OnClose += (e) =>
         {

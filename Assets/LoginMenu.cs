@@ -8,6 +8,8 @@ using UnityEngine.UI;
 
 public class LoginMenu : MonoBehaviour
 {
+    public static string DEFAULT_SEREVR = "sollisoft.com";
+    private string connectedServer = DEFAULT_SEREVR;
     public TMPro.TMP_InputField ServerInputField;
     public TMPro.TMP_InputField UsernameInputField;
     public TMPro.TMP_InputField PasswordInputField;
@@ -20,7 +22,12 @@ public class LoginMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         string host = PlayerPrefs.GetString("SERVER");
-        if (!host.Equals("") && PlayerPrefs.GetString("SECURE").Equals(false.ToString()))
+        if (host.Equals("")) {
+            PlayerPrefs.SetString("SERVER", DEFAULT_SEREVR);
+            host = DEFAULT_SEREVR;
+        }
+        connectedServer = host;
+        if (PlayerPrefs.GetString("SECURE").Equals(false.ToString()))
         {
             host = "http://" + host;
         }
@@ -34,7 +41,7 @@ public class LoginMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Application.Quit();
+            Close();
         }
         else if (Input.GetKeyUp(KeyCode.Tab))
         {
@@ -85,7 +92,7 @@ public class LoginMenu : MonoBehaviour
             var scheme = "https";
             if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
                 scheme = "http";
-            string host = PlayerPrefs.GetString("SERVER", "localhost");
+            string host = PlayerPrefs.GetString("SERVER");
             UnityWebRequest authRequest = UnityWebRequest.Get($"{scheme}://{host}/auth/login/");
             authRequest.downloadHandler = new DownloadHandlerBuffer();
             authRequest.useHttpContinue = false;
@@ -99,7 +106,10 @@ public class LoginMenu : MonoBehaviour
             };
             if ((int)(authRequest.responseCode / 100) == 2)
             {
-                SceneManager.LoadScene("MainMenu");
+                PlayerPrefs.SetString("SESSION_ACTIVE", "true");
+                SceneManager.LoadScene("OpenWorld"); // Restart
+            } else {
+                PlayerPrefs.SetString("SESSION_ACTIVE", "");
             }
         }
         finally
@@ -122,6 +132,11 @@ public class LoginMenu : MonoBehaviour
             isHttps = true;
             server = server.Substring("https://".Length);
         }
+        if (server.Equals(""))
+        {
+            isHttps = true;
+            server = DEFAULT_SEREVR;
+        }
 
         PlayerPrefs.SetString("SECURE", isHttps.ToString());
         PlayerPrefs.SetString("SERVER", server);
@@ -137,6 +152,16 @@ public class LoginMenu : MonoBehaviour
         StartCoroutine(TryLogin());
     }
 
+    public void Close()
+    {
+        if (loginRequest != null) loginRequest.Abort();
+        StopAllCoroutines();
+        if (connectedServer.Equals(PlayerPrefs.GetString("SERVER")))
+            SceneManager.UnloadSceneAsync("Login");
+        else
+            SceneManager.LoadScene("OpenWorld"); // Restart
+    }
+
     private IEnumerator TryLogin()
     {
         ServerInputField.interactable = false;
@@ -149,15 +174,10 @@ public class LoginMenu : MonoBehaviour
             var scheme = "https";
             if (PlayerPrefs.GetString("SECURE", "true").Equals(false.ToString()))
                 scheme = "http";
-            string host = PlayerPrefs.GetString("SERVER", "");
+            string host = PlayerPrefs.GetString("SERVER");
             if (loginRequest != null)
             {
                 loginRequest.Abort();
-                yield break;
-            }
-            if (host.Equals(""))
-            {
-                ErrorMessage.text = "Missing server";
                 yield break;
             }
             loginRequest = UnityWebRequest.Post($"{scheme}://{host}/auth/login/", new Dictionary<string, string>
