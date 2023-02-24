@@ -2,6 +2,7 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
+from boolean_geometry import TIME
 
 def authenticate(user, player_id):
     from . import models
@@ -70,7 +71,7 @@ class BlockConsumer(JsonWebsocketConsumer):
                     done, finishers, time = response
                     break
             if self.duration is None:
-                self.duration = 5 if int(self.player_id) in finishers else max(0, 5 + (5 - time))
+                self.duration = TIME if int(self.player_id) in finishers else max(0, TIME + (TIME - time))
                 async_to_sync(self.channel_layer.group_send)(
                     "players", {"type": "cursor_position", "player": self.player_id, "block": block, "position": position}
                 )
@@ -79,10 +80,10 @@ class BlockConsumer(JsonWebsocketConsumer):
                     self.block_group_name, {"type": "block_message", "finishers": finishers, "block": block}
                 )
             elif int(self.player_id) in finishers:
-                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 - time) / self.duration))}:fin', 'utf8'))
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, TIME - time) / self.duration))}:fin', 'utf8'))
 
             elif int(self.player_id) not in finishers:
-                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, 5 + (5 - time)) / self.duration))}:queue', 'utf8'))
+                self.send(bytes_data=bytes(f'digg:{block}:{min(99, int(100 - 100 * max(0, TIME + (TIME - time)) / self.duration))}:queue', 'utf8'))
 
         async_to_sync(self.channel_layer.group_send)(
             "players", {"type": "cursor_action", "player": self.player_id, "action": action, "block": block}

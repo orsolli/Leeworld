@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class OtherPlayer : MonoBehaviour
 {
+    static int TIME = 2;
     public GameObject cursorPrefab;
     private GameObject cursor;
     public string action { get; set; }
@@ -15,7 +16,7 @@ public class OtherPlayer : MonoBehaviour
     {
         if (action != null && action.Equals("digg"))
         {
-            cursor.transform.GetChild(0).Rotate(Vector3.up * Time.deltaTime * 90 / 5);
+            cursor.transform.GetChild(0).Rotate(Vector3.up * Time.deltaTime * 90 / TIME);
         }
         else
         {

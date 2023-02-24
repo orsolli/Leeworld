@@ -3,7 +3,7 @@ from time import sleep, monotonic
 from csg.core import CSG
 from csg.geom import Polygon, Vertex, Vector
 
-
+TIME = 2
 
 def intersect(id: str, mesh: str, players: tuple[str, str, bool], queue: Queue):
     """
@@ -55,7 +55,7 @@ vn 0 0 -1
             new_ground += '\n'
             j = k
     used_time = monotonic() - start_time
-    sleep(max(0, 4 - used_time)) # Add consistent time
+    sleep(max(0, TIME - used_time - 1)) # Add consistent time
     queue.put((id, new_ground), timeout=10)
     print(f"Terraformed in {used_time}")
 
