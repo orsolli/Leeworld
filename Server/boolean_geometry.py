@@ -1,31 +1,48 @@
 from multiprocessing import Queue
 from time import sleep, monotonic
-from csg.core import CSG
-from csg.geom import Polygon, Vertex, Vector
+from VoxelEngine import main
 
 TIME = 2
 
-def intersect(id: str, mesh: str, players: tuple[str, str, bool], queue: Queue):
+def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Queue):
     """
-    players = (mesh, position)
-    position = x,y,z
-    x = 10 => 1, 11 => 1 + 1/8, 27 => 2 + 7/8, 87 => 8 + 7/8, 101 => 1 + 1/64, 111 => 1 + 1/8 + 1/64
+    Perform modification between meshes and generate an octree mesh.
+
+    Args:
+        id (str): Identifier for the modification task will be passed as first element in queue when done.
+        mesh (str): Main mesh.
+        players (list[tuple[str, str, bool]]): list of player meshes and their properties.
+            Each player tuple contains (mesh, position, build).
+            Position = 'x,y,z' 8-adics x = 10 => 1, 11 => 1 + 1/8, 27 => 2 + 7/8, 67 => 6 + 7/8, 101 => 1 + 1/64, 111 => 1 + 1/8 + 1/64.
+        queue (Queue): Queue to store the result of the modification task.
+
+    Returns:
+        str: Octree mesh as a string.
     """
     start_time = monotonic()
-    a = CSG.fromPolygons(parseOBJ(mesh)) if mesh else CSG()
-    for player_mesh, position, build in players:
-        if build:
-            a = a + CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
-        else:
-            a = a - CSG.fromPolygons(parseOBJ(player_mesh, parsePos(position)))
+    new_ground, triangles = main.mutate(mesh=mesh, players=players)
+    used_time = monotonic() - start_time
+    print(f"Terraformed in {used_time}")
+    sleep(max(0, TIME - used_time - 1))
+    queue.put((id, new_ground), timeout=10)
+    compression_result = main.compress(triangles)
+    queue.put((f'optimize({id})', compression_result), timeout=10)
+    return new_ground
 
-    verts, cells, count = a.toVerticesAndPolygons()
 
-    new_ground = ''
-    for v in verts:
-        new_ground += f'v {v[0]} {v[1]} {v[2]}\n'
+if __name__ == '__main__':
+    from VoxelEngine import main
+    queue = Queue()
+    try:
+        print(intersect('1', '''v 0 0 0
+v 0 0 8
+v 0 8 0
+v 0 8 8
+v 8 0 0
+v 8 0 8
+v 8 8 0
+v 8 8 8
 
-    new_ground += """
 vn 1 0 0
 vn -1 0 0
 vn 0 1 0
@@ -33,100 +50,46 @@ vn 0 -1 0
 vn 0 0 1
 vn 0 0 -1
 
-"""
+f 1//2 2 3//2
+f 2 4//2 3//2
+f 2//5 6//5 4//5
+f 4//5 6//5 8//5
+f 1//4 5//4 2//4
+f 2//4 5//4 6//4
+f 3 8//3 7//3
+f 3 4//3 8//3
+f 1//6 3//6 7//6
+f 1//6 7//6 5//6
+f 5//1 8//1 6//1
+f 5//1 7//1 8//1
+        ''', [('''v 0 0 0
+v 0 0 1
+v 0 1 0
+v 0 1 1
+v 1 0 0
+v 1 0 1
+v 1 1 0
+v 1 1 1
 
-    for cell in cells:
-        n = calculate_normal(*cell[0:3], verts)
-        i = 0
-        j = 1
-        for k in range(2, len(cell)):
-            new_ground += f'f {cell[i]+1}'
-            if n != cell[i]+1:
-                new_ground += f'//{n}'
+vn 1 0 0
+vn -1 0 0
+vn 0 1 0
+vn 0 -1 0
+vn 0 0 1
+vn 0 0 -1
 
-            new_ground += f' {cell[j]+1}'
-            if n != cell[j]+1:
-                new_ground += f'//{n}'
-
-            new_ground += f' {cell[k]+1}'
-            if n != cell[k]+1:
-                new_ground += f'//{n}'
-
-            new_ground += '\n'
-            j = k
-    used_time = monotonic() - start_time
-    sleep(max(0, TIME - used_time - 1)) # Add consistent time
-    queue.put((id, new_ground), timeout=10)
-    print(f"Terraformed in {used_time}")
-
-
-def parseOBJ(mesh: str, translate: Vector = Vector(0,0,0)):
-    polygons = []
-
-    objVertices: list[Vector] = []
-    objNormals: list[Vector] = []
-
-    # Process each line
-    for line in mesh.split('\n'):
-
-        # Check the line type
-        if line.startswith("v "):
-            # Process vertex data
-            _, x, y, z = line.split(' ')
-            objVertices.append(Vector(float(x), float(y), float(z)) + translate)
-        elif line.startswith("vn "):
-            # Process normal data
-            _, x, y, z = line.split(' ')
-            objNormals.append(Vector(float(x), float(y), float(z)))
-        elif line.startswith("f "):
-            # Process face data
-            vertices = []
-            for face in line[2:].split(' '):
-                vertexData: list[str] = (face + "//").split('/')
-                vertexIndex = int(vertexData[0]) - 1
-                normalIndex = int((vertexData[2] + vertexData[1] + vertexData[0])[0]) - 1
-                vertices.append(Vertex(objVertices[vertexIndex], normal=objNormals[normalIndex]))
-
-            try:
-                polygons.append(Polygon(vertices))
-            except ZeroDivisionError:
-                print(vertices)
-
-    return polygons
-
-
-def parsePos(position: str):
-    xs, ys, zs = position.split(',')
-    x, y, z = 0,0,0
-
-    while xs:
-        x = x/8 + int(xs[-1], base=8)
-        xs = xs[:-1]
-
-    while ys:
-        y = y/8 + int(ys[-1], base=8)
-        ys = ys[:-1]
-
-    while zs:
-        z = z/8 + int(zs[-1], base=8)
-        zs = zs[:-1]
-
-    return Vector(x, y, z)
-
-
-def calculate_normal(i, j, k, verts):
-    a: Vector = Vector(verts[j]) - Vector(verts[i])
-    b: Vector = Vector(verts[k]) - Vector(verts[j])
-    normal_vector = a.cross(b).unit()
-    if normal_vector.x > 0.5:
-        return 1
-    if normal_vector.x < -0.5:
-        return 2
-    if normal_vector.y > 0.5:
-        return 3
-    if normal_vector.y < -0.5:
-        return 4
-    if normal_vector.z > 0.5:
-        return 5
-    if normal_vector.z < -0.5:
-        return 6
+f 1//2 2 3//2
+f 2 4//2 3//2
+f 2//5 6//5 4//5
+f 4//5 6//5 8//5
+f 1//4 5//4 2//4
+f 2//4 5//4 6//4
+f 3 8//3 7//3
+f 3 4//3 8//3
+f 1//6 3//6 7//6
+f 1//6 7//6 5//6
+f 5//1 8//1 6//1
+f 5//1 7//1 8//1
+        ''', '1,1,1', False)], queue))
+    finally:
+        queue.close()

@@ -4,6 +4,7 @@ from . import models
 from boolean_geometry import intersect
 from multiprocessing import Process, Queue
 from queue import Empty
+import signal
 
 
 DIGG=0
@@ -12,7 +13,22 @@ PING=2
 
 terraformer_signal = Signal()
 
-processes: dict[str, tuple[Queue, Process], float] = {}
+processes: dict[str, tuple[Queue, Process, float]] = {}
+optimize_processes: dict[str, tuple[Queue, Process, float]] = {}
+
+def shutdown(s, frame):
+    print(f"Received signal {s}. Terminating digg processes {frame}")
+    for k, p in {**processes, **optimize_processes}.items():
+        p[0].close()
+        p[1].terminate()
+        p[1].join()
+        if p[1].is_alive():
+            print(f"Killing {k} from " + ('processes' if k in processes else 'optimize_processes'))
+            p[1].kill()
+        else:
+            print(f"Terminated {k} from " + ('processes' if k in processes else 'optimize_processes'))
+        p[1].close()
+    signal.default_int_handler(s, frame)
 
 def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwargs) -> list[int]:
 
@@ -50,9 +66,10 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
                 print(f"{player_id} ruined it for {trofast}")
             worker.delete()
 
-        processes[block.position][1].kill()
-        processes[block.position][0].close()
-        del processes[block.position]
+        if block.position in processes:
+            processes[block.position][1].terminate()
+            processes[block.position][0].close()
+            del processes[block.position]
 
     if block.position not in processes:
         tools = []
@@ -65,6 +82,36 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
             models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
             worker.delete()
         queue = Queue()
+
+        if block.position in optimize_processes:
+            try:
+                process_id, mesh = optimize_processes[block.position][0].get(block=False)
+                optimize_processes[block.position][1].join()
+            except Empty:
+                process_id = None
+            optimize_processes[block.position][0].close()
+
+            if process_id == f'optimize({block.position})':
+                if (len(block.mesh) > len(mesh)):
+                    print(f"{block.position} compressed {len(block.mesh)=} > {len(mesh)=}")
+                    block.mesh = mesh
+                    block.save()
+                else:
+                    print(f"{len(block.mesh)=} < {len(mesh)=}")
+            elif process_id is not None:
+                print(f"Wrong process_id. Expected optimized({block.position}) but got {process_id}")
+            if optimize_processes[block.position][1].is_alive():
+                print("Its alive! Lets terminate")
+                optimize_processes[block.position][1].terminate()
+            print("Lets join")
+            optimize_processes[block.position][1].join()
+            if optimize_processes[block.position][1].is_alive():
+                print("Its alive! Lets kill it")
+                optimize_processes[block.position][1].kill()
+            print("Lets close")
+            optimize_processes[block.position][1].close()
+            del optimize_processes[block.position]
+
         processes[block.position] = (queue, Process(target=intersect, args=(block.position, block.mesh, tools, queue)), monotonic())
         processes[block.position][1].start()
 
@@ -72,16 +119,15 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
     finishers = [p.player.id for p in workers]
     time = processes[block.position][2]
     try:
-        block_position, mesh = processes[block.position][0].get(block=False)
-
-        block = models.Block.objects.get(position=block_position)
-        block.mesh = mesh
-        block.save()
-        print(f"{player_id} finished the work for {finishers}")
+        process_id, mesh = processes[block.position][0].get(block=False)
+        if process_id == block.position:
+            block.mesh = mesh
+            block.save()
+            print(f"{player_id} finished the work for {finishers}")
+        else:
+            print(f"Wrong process_id. Expected {block.position} but got {process_id}")
         workers.delete()
-        processes[block.position][1].join()
-        processes[block.position][1].close()
-        processes[block.position][0].close()
+        optimize_processes[block.position] = processes[block.position]
         del processes[block.position]
         return True, finishers, monotonic() - time
     except Empty:
