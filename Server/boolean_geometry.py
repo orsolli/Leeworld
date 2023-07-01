@@ -1,4 +1,5 @@
 from multiprocessing import Queue
+import os
 from time import sleep, monotonic
 from VoxelEngine import main
 
@@ -25,6 +26,7 @@ def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Q
     print(f"Terraformed in {used_time}")
     sleep(max(0, TIME - used_time - 1))
     queue.put((id, new_ground), timeout=10)
+    os.nice(19)
     compression_result = main.compress(triangles)
     queue.put((f'optimize({id})', compression_result), timeout=10)
     return new_ground

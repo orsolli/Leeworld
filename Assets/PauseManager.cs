@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public abstract class PauseManager : MonoBehaviour
+public class PauseManager : MonoBehaviour
 {
     public List<GameObject> disableGameObjectsOnPause = new List<GameObject>();
-    
+
     void Start()
     {
         SceneManager.sceneUnloaded += UnPause;
@@ -21,13 +21,21 @@ public abstract class PauseManager : MonoBehaviour
             go.SetActive(!pause);
         }
     }
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (!SceneManager.GetSceneByName("MainMenu").isLoaded) SceneManager.LoadScene("MainMenu", LoadSceneMode.Additive);
+            Pause();
+        }
+    }
 
-    protected void Pause()
+    public void Pause()
     {
         SetPause(true);
     }
 
-    protected void UnPause(Scene scene)
+    public void UnPause(Scene scene)
     {
         SetPause(false);
     }

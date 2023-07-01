@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -19,8 +18,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         controller = GetComponentInParent<CharacterController>();
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     void Update()

@@ -7,6 +7,7 @@ public class ChunkSpawner : MonoBehaviour
 {
     public GameObject target;
     public GameObject chunkPrefab;
+    public Transform chunkRoot;
     public int drawDistance = 16;
     public int memory = 128;
     public static int worldSize = 255;
@@ -37,7 +38,7 @@ public class ChunkSpawner : MonoBehaviour
             {
                 var dir = pos - lastPos;
                 lastPos = pos;
-                pos += dir*2;
+                pos += dir * 2;
                 var x = (int)(pos.x / chunkSize);
                 var y = (int)(pos.y / chunkSize);
                 var z = (int)(pos.z / chunkSize);
@@ -88,7 +89,7 @@ public class ChunkSpawner : MonoBehaviour
                 }
                 foreach (var plan in spawnQueue)
                 {
-                    var chunk = GameObject.Instantiate(chunkPrefab, plan.position, Quaternion.identity);
+                    var chunk = GameObject.Instantiate(chunkPrefab, plan.position, Quaternion.identity, chunkRoot);
                     var block = chunk.GetComponent<Block>();
                     chunks[plan.x, plan.y, plan.z] = chunk;
                     yield return 0;

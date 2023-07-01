@@ -9,12 +9,29 @@ Upload the Unity.alf file to https://license.unity3d.com/manual and get the .ulf
 
     docker build -t orjans/leeworld .
 
+## Setup database
+
+    touch db.sqlite3
+    docker run \
+        -it \
+        --rm \
+        -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+        --entrypoint ./manage.py \
+    orjans/leeworld migrate
+    docker run \
+        -it \
+        --rm \
+        -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+        --entrypoint ./manage.py \
+    orjans/leeworld createsuperuser
+
+
 ## Host
 
-Create a file named `Server/LeeworldServer/production_settings.py`
+Create a file named `production_settings.py`
 
 ```python
-    # Server/LeeworldServer/production_settings.py
+    # production_settings.py
     from .settings import *
     SECRET_KEY = "with-a-random-secret-key-123*"
     DEBUG = False
@@ -28,9 +45,12 @@ Create ssl certificate
 Run the server
 
     docker run \
+        -it \
         -p 4430:443 \
-        -v $(pwd)/Server/db.sqlite3:/app/db.sqlite3 \
-        -v $(pwd)/Server/LeeworldServer/production_settings.py:/app/LeeworldServer/production_settings.py \
+        -v $(pwd)/db.sqlite3:/app/db.sqlite3 \
+        -v $(pwd)/production_settings.py:/app/LeeworldServer/production_settings.py \
             -e DJANGO_SETTINGS_MODULE=LeeworldServer.production_settings \
-        -v $(pwd)/Server/crt.pem:/app/crt.pem -v $(pwd)/Server/key.pem:/app/key.pem \
+        -v $(pwd)/crt.pem:/app/crt.pem -v $(pwd)/key.pem:/app/key.pem \
     orjans/leeworld -e ssl:443:privateKey=key.pem:certKey=crt.pem
+
+Visit https://localhost:4430/admin to register players

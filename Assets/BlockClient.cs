@@ -2,13 +2,15 @@ using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class BlockClient : PauseManager
+public class BlockClient : MonoBehaviour
 {
     public WebSocket client;
     private Server server;
+    private PauseManager pm;
 
     void OnEnable()
     {
+        pm = FindObjectOfType<PauseManager>(true);
         server = FindObjectOfType<Server>(true);
         Connect();
     }
@@ -35,7 +37,7 @@ public class BlockClient : PauseManager
         client.OnError += (e) =>
         {
             SceneManager.LoadScene("Login", LoadSceneMode.Additive);
-            Pause();
+            pm.Pause();
         };
         client.OnClose += (e) =>
         {

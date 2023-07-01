@@ -3,6 +3,7 @@ import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 from boolean_geometry import TIME
+from . import signals
 
 def authenticate(user, player_id):
     from . import models
@@ -11,7 +12,6 @@ def authenticate(user, player_id):
 class BlockConsumer(JsonWebsocketConsumer):
     def connect(self):
         self.block_group_name = None
-        from . import signals
         self.signals = signals
         self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
         self.user = self.scope["user"]
@@ -96,98 +96,3 @@ class BlockConsumer(JsonWebsocketConsumer):
         if int(self.player_id) in finishers:
             self.send(bytes_data=bytes(f'digg:{block}:{100}', 'utf8'))
         self.send(bytes_data=bytes(f'block:{block}', 'utf8'))
-
-class PlayerConsumer(JsonWebsocketConsumer):
-    def connect(self):
-        self.players_group = None
-        self.player_id = self.scope["url_route"]["kwargs"]["player_id"]
-        self.user = self.scope["user"]
-        if not authenticate(self.user, self.player_id):
-            self.user = None
-
-        self.players_group = "players"
-        self.block = '0_0_0'
-        self.throttle = 0
-
-        async_to_sync(self.channel_layer.group_add)(
-            self.players_group, self.channel_name
-        )
-
-        self.accept()
-
-    def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_send)(
-            self.players_group, {"type": "player_disconnect", "player": self.player_id}
-        )
-        async_to_sync(self.channel_layer.group_discard)(
-            self.players_group, self.channel_name
-        )
-
-    def receive(self, bytes_data):
-        text_data_json = json.loads(bytes_data)
-        part = text_data_json['part']
-        block = '_'.join([str(int(p)) for p in text_data_json['block'].split('_')])
-        if part == 'player':
-            self.block = block
-        elif self.user is None:
-            return self.close(3000) # Unauthenticated users can not point
-        position = '_'.join([str(int(p, base=10)) for p in text_data_json['position'][::-1].split('_')])[::-1]
-        async_to_sync(self.channel_layer.group_send)(
-            self.players_group, {"type": f"{part}_position", "player": self.player_id, "block": block, "position": position}
-        )
-
-    # Receive position from player group
-    def player_position(self, event):
-        player = event["player"]
-        block = '_'.join([str(int(p)) for p in event['block'].split('_')])
-        position = event['position']
-        if self.player_id != player:
-            self.throttle -= 1.1
-            if self.throttle < 0:
-                self.throttle = self.distance(block)
-                self.send(bytes_data=bytes(f'pos:{player}:{block}:{position}', 'utf8'))
-
-    # Receive position from cursors group
-    def cursor_position(self, event):
-        player = event["player"]
-        block = '_'.join([str(int(p)) for p in event['block'].split('_')])
-        position = event['position']
-        if self.player_id != player:
-            self.throttle -= 1.1
-            if self.throttle < 0:
-                self.throttle = self.distance(block)
-                self.send(bytes_data=bytes(f'cur:{player}:{block}:{position}', 'utf8'))
-
-    # Receive action from block group
-    def cursor_action(self, event):
-        player = event["player"]
-        action = event["action"]
-        block = event["block"]
-        if self.player_id != player:
-            self.throttle -= 1.1
-            if self.throttle < 0 or block is None:
-                self.send(bytes_data=bytes(f'act:{player}:{action}', 'utf8'))
-                self.throttle = self.distance(block) if block else 0
-
-    # Receive disconnect from block group
-    def player_disconnect(self, event):
-        player = event["player"]
-        if self.player_id != player:
-            self.send(bytes_data=bytes(f'off:{player}', 'utf8'))
-
-    def distance(self, block: str):
-        if self.block is None:
-            return 0
-        position_a = block.split('_')
-        position_b = self.block.split('_')
-        relative_position = [
-            int(position_a[0]) - int(position_b[0]),
-            int(position_a[1]) - int(position_b[1]),
-            int(position_a[2]) - int(position_b[2]),
-        ]
-        distance_sqared = sum([
-            relative_position[0]**2,
-            relative_position[1]**2,
-            relative_position[2]**2,
-        ])
-        return distance_sqared

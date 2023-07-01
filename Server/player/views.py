@@ -47,11 +47,12 @@ def login_user(request: HttpRequest):
         return HttpResponse('Authorized', status=200)
     if request.method == 'GET':
         return HttpResponse('Unauthorized', status=401)
-    user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
-    if user is not None:
-        login(request, user)
-        return HttpResponse('Authorized', status=200)
-    return HttpResponse('Unauthorized', status=401)
+    if request.method == 'POST':
+        user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
+        if user is not None:
+            login(request, user)
+            return HttpResponse('Authorized', status=200)
+        return HttpResponse('Unauthorized', status=401)
 
 @login_required
 def logout_user(request: HttpRequest):

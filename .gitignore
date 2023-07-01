@@ -72,10 +72,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # Server
-Server/db.sqlite3
+*.sqlite3
 *.pyc
 Unity.alf
 Unity_lic.ulf
-Server/LeeworldServer/production_settings.py
-Server/crt.pem
-Server/key.pem
+production_settings.py
+crt.pem
+key.pem

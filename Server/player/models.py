@@ -34,6 +34,6 @@ f 5//1 7//1 8//1
 class Player(models.Model):
     id=models.BigAutoField(primary_key=True)
     user=models.ForeignKey(User, on_delete=models.CASCADE)
-    mesh=models.TextField()
+    mesh=models.TextField(default=default_player_mesh)
     builder=models.BooleanField(default=False)
-    position=models.CharField(max_length=100)
+    position=models.CharField(max_length=100, default='0,0,0')

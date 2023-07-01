@@ -16,8 +16,7 @@ terraformer_signal = Signal()
 processes: dict[str, tuple[Queue, Process, float]] = {}
 optimize_processes: dict[str, tuple[Queue, Process, float]] = {}
 
-def shutdown(s, frame):
-    print(f"Received signal {s}. Terminating digg processes {frame}")
+def shutdown():
     for k, p in {**processes, **optimize_processes}.items():
         p[0].close()
         p[1].terminate()
@@ -28,6 +27,10 @@ def shutdown(s, frame):
         else:
             print(f"Terminated {k} from " + ('processes' if k in processes else 'optimize_processes'))
         p[1].close()
+
+def shutdown_handler(s, frame):
+    print(f"Received signal {s}. Terminating digg processes {frame}")
+    shutdown()
     signal.default_int_handler(s, frame)
 
 def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwargs) -> list[int]:
@@ -112,7 +115,7 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
             optimize_processes[block.position][1].close()
             del optimize_processes[block.position]
 
-        processes[block.position] = (queue, Process(target=intersect, args=(block.position, block.mesh, tools, queue)), monotonic())
+        processes[block.position] = (queue, Process(target=intersect, name=f"block_{block.position}", args=(block.position, block.mesh, tools, queue), daemon=True), monotonic())
         processes[block.position][1].start()
 
     workers = models.Terraformer.objects.filter(block=block)

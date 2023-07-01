@@ -7,7 +7,7 @@ using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class Digger : PauseManager
+public class Digger : MonoBehaviour
 {
     public static string DEFAULT_MESH = @"v 0 0 0
 v 0 0 0.001
@@ -39,8 +39,9 @@ f 5//1 8//1 6//1
 f 5//1 7//1 8//1
 ";
     public Vector3 offset;
-    public GameObject previewBlock;
-    public Transform progressBlock;
+    public GameObject previewBlockPrefab;
+    private GameObject previewBlock;
+    private Transform progressBlock;
     private Transform targetTransform;
     public LayerMask layerMask;
     private IAsyncEnumerator<float> diggingCoroutine;
@@ -50,36 +51,39 @@ f 5//1 7//1 8//1
     public Vector3 gridSize;
     private Server server;
     public WebSocket client;
-    public PauseManager pm;
+    private PauseManager pm;
 
-    void OnEnable()
+    void Start()
     {
+        pm = FindObjectOfType<PauseManager>(true);
         server = FindObjectOfType<Server>(true);
         client = FindObjectOfType<BlockClient>(true).client;
         client.OnMessage += OnMessage;
 
         var mesh = MeshParser.ParseOBJ(PlayerPrefs.GetString("PLAYER_MESH", DEFAULT_MESH), 1);
         gridSize = mesh.bounds.max;
+        previewBlock = Instantiate(previewBlockPrefab);
         previewBlock.transform.localScale = gridSize;
+        progressBlock = previewBlock.transform.GetChild(0);
 
         sign = PlayerPrefs.GetString("PLAYER_BUILDER").Equals(false.ToString()) ? 1 : -1;
     }
 
+    void OnDestroy()
+    {
+        Destroy(previewBlock);
+        client.OnMessage -= OnMessage;
+    }
+
     async void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            SceneManager.LoadScene("MainMenu", LoadSceneMode.Additive);
-            Pause();
-            return;
-        }
         if (diggingCoroutine == null && MovePreviewBlock() && Input.GetMouseButtonDown(0))
         {
             progress = 0;
             if (!PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
             {
                 SceneManager.LoadScene("Login", LoadSceneMode.Additive);
-                Pause();
+                pm.Pause();
                 return;
             }
             diggingCoroutine = Digg(previewBlock.transform);
@@ -107,11 +111,6 @@ f 5//1 7//1 8//1
             }
         }
         progressBlock.SetLocalPositionAndRotation(progressBlock.localPosition, Quaternion.AngleAxis(90 * progress, Vector3.up));
-    }
-
-    private void OnDisable()
-    {
-        client.OnMessage -= OnMessage;
     }
 
     void OnMessage(byte[] data)
