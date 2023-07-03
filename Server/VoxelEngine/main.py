@@ -1,4 +1,3 @@
-from multiprocessing import Queue
 from VoxelEngine.csg import parseOBJ, parsePos, calculate_normal, CSG
 from VoxelEngine.octree import build_octree, generate_octree_mesh
 
@@ -62,7 +61,6 @@ def mutate(mesh: str, players: list[tuple[str, str, bool]]) -> str:
         mesh (str): Main mesh.
         players (list[tuple[str, str, bool]]): list of player meshes and their properties.
             Each player tuple contains (mesh, position, build).
-        queue (Queue): Queue to store the result of the modification task.
 
     Returns:
         str: Octree mesh as a string.

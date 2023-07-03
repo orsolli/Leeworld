@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3974097394996176134}
   - component: {fileID: 3974097394996176153}
   - component: {fileID: 3974097394996176154}
+  - component: {fileID: -4511201153651443152}
   m_Layer: 0
   m_Name: CubeChunk
   m_TagString: Untagged
@@ -111,3 +112,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a05904b062c5ccd718c7de639197d54c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-4511201153651443152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3974097394996176132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70e51a51a8570f65c9a0e2c49490e091, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blueprintPrefab: {fileID: 3398520153181603658, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}

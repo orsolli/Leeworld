@@ -1,3 +1,4 @@
+from functools import lru_cache
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -35,6 +36,10 @@ def profiles_list(request: HttpRequest):
 
 @login_required
 def profile(request: HttpRequest, id: str):
+    return get_profile(id)
+
+@lru_cache(50)
+def get_profile(id: str):
     player = models.Player.objects.get(id=id)
     return JsonResponse({
         'mesh': player.mesh,

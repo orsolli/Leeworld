@@ -88,7 +88,7 @@ public class NetworkManager : MonoBehaviour
             var parts = res.Split(":");
             var player = parts[1];
             var block = parts[2].Split('_');
-            var position = FromUInt8Vector(parts[3]) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
+            var position = Int8.FromUInt8Vector(parts[3]) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
             OtherPlayer otherPlayer;
             if (otherPlayers.TryGetValue(player, out otherPlayer))
             {
@@ -111,7 +111,7 @@ public class NetworkManager : MonoBehaviour
             if (otherPlayers.TryGetValue(player, out otherPlayer))
             {
                 var block = parts[2].Split('_');
-                var position = FromUInt8Vector(parts[3]) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
+                var position = Int8.FromUInt8Vector(parts[3]) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
                 otherPlayer.GetCursor().position = position;
             }
         }
@@ -139,8 +139,6 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-
-
     private IEnumerator GetMesh(string id, OtherPlayer otherPlayer)
     {
         UnityWebRequest loginRequest = UnityWebRequest.Get($"{server.GetHttpScheme()}://{server.GetHost()}/profile/{id}/");
@@ -157,30 +155,5 @@ public class NetworkManager : MonoBehaviour
             var json = JsonUtility.FromJson<Profile>(res);
             otherPlayer.GetCursor().transform.localScale = MeshParser.ParseOBJ(json.mesh, 1).bounds.max;
         }
-    }
-
-    private Vector3 FromUInt8Vector(string vector)
-    {
-        string[] vectorParts = vector.Split('_');
-        string x = vectorParts[0];
-        string y = vectorParts[1];
-        string z = vectorParts[2];
-        return new Vector3(FromUInt8(x), FromUInt8(y), FromUInt8(z));
-    }
-
-    private float FromUInt8(string num)
-    {
-        int max_loop = 64;
-        int i = 1;
-        float f = 0;
-        while (num.Length > 0)
-        {
-            int n = int.Parse(num.Substring(0, 1));
-            f += (float)n / i;
-            i = i * 8;
-            num = num.Substring(1);
-            if (max_loop-- < 0) break;
-        }
-        return f;
     }
 }

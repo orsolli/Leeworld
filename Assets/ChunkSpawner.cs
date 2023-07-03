@@ -90,7 +90,6 @@ public class ChunkSpawner : MonoBehaviour
                 foreach (var plan in spawnQueue)
                 {
                     var chunk = GameObject.Instantiate(chunkPrefab, plan.position, Quaternion.identity, chunkRoot);
-                    var block = chunk.GetComponent<Block>();
                     chunks[plan.x, plan.y, plan.z] = chunk;
                     yield return 0;
                     if (Vector3.Distance(lastPos, target.transform.position) > chunkSize) break;

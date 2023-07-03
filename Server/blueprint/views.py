@@ -1,4 +1,4 @@
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
@@ -11,16 +11,23 @@ def get_blueprint(request: HttpRequest):
     block_id = request.GET['block']
     if not block_id.count('_') == 2:
         return HttpResponse("block must be three numbers separated by underscore (x_y_z)")
-    block_id = '_'.join([str(int(p)) for p in block_id.split('_')])
+    block_id = ','.join([str(int(p)) for p in block_id.split('_')])
 
-    if not models.Block.objects.get(position=block_id):
-        return HttpResponse("Block not found")
+    if not models.Block.objects.filter(position=block_id).exists():
+        return JsonResponse([], safe=False)
 
     blueprints = models.Blueprint.objects.filter(
         block=models.Block.objects.get(position=block_id),
         timestamp__gt=datetime.utcnow() - timedelta(1)
     )
-    return HttpResponse(blueprints, status=200)
+    return JsonResponse([{
+        'player': blueprint.player.id,
+        'block': blueprint.block.position,
+        'position': blueprint.position,
+        'size_x': blueprint.size_x,
+        'size_y': blueprint.size_y,
+        'size_z': blueprint.size_z,
+    } for blueprint in blueprints], safe=False) # safe is False because data is list instead of dict
 
 @login_required
 @csrf_exempt
