@@ -89,7 +89,13 @@ def compress(triangles: list[tuple[tuple[float,float,float],tuple[float,float,fl
         str: Octree mesh as a string.
     """
     print("Building octree")
-    octree = build_octree(mesh=triangles, level=6, size=8, center=(4, 4, 4))
+    vertices = sum(((sum(vertices, ())) for vertices in triangles), ())
+    fine_grains = vertices
+    for i in range(0, 6):
+        fine_grains = [v for v in fine_grains if (v + 8 / (2**7)) % (8/(2**i)) > 8 / (2**6)]
+        if len(fine_grains) == 0:
+            break
+    octree = build_octree(mesh=triangles, level=i+1, size=8, center=(4, 4, 4))
     print("Built octree")
     triangles = generate_octree_mesh(octree)
     vertices, indices = process_indices(triangles)

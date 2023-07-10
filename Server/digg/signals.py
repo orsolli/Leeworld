@@ -1,3 +1,4 @@
+import threading
 from time import monotonic
 from django.dispatch import Signal
 from . import models
@@ -12,21 +13,26 @@ STOP=1
 PING=2
 
 terraformer_signal = Signal()
+lock = threading.Lock()
 
 processes: dict[str, tuple[Queue, Process, float]] = {}
 optimize_processes: dict[str, tuple[Queue, Process, float]] = {}
 
 def shutdown():
-    for k, p in {**processes, **optimize_processes}.items():
-        p[0].close()
-        p[1].terminate()
-        p[1].join()
-        if p[1].is_alive():
-            print(f"Killing {k} from " + ('processes' if k in processes else 'optimize_processes'))
-            p[1].kill()
-        else:
-            print(f"Terminated {k} from " + ('processes' if k in processes else 'optimize_processes'))
-        p[1].close()
+    with lock:
+        for k, p in {**processes, **optimize_processes}.items():
+            try:
+                p[0].close()
+                p[1].terminate()
+                p[1].join(5)
+                if p[1].is_alive():
+                    print(f"Killing {k} from " + ('processes' if k in processes else 'optimize_processes'))
+                    p[1].kill()
+                else:
+                    print(f"Terminated {k} from " + ('processes' if k in processes else 'optimize_processes'))
+                p[1].close()
+            except AttributeError:
+                pass
 
 def shutdown_handler(s, frame):
     print(f"Received signal {s}. Terminating digg processes {frame}")
@@ -51,87 +57,85 @@ def terraformer_signal_handler(action: DIGG | STOP | PING, player_id: str, **kwa
         else:
             models.TerraformQueue(player=player, block=block, position=position).save()
 
-    if action is STOP:
-        queued, _ = models.TerraformQueue.objects.filter(player=player).delete()
-        if not models.Terraformer.objects.filter(player=player).exists():
-            if queued:
-                print(f"{player_id} gave up the queue")
-            return False, [], 5
-        deserter = models.Terraformer.objects.get(player=player)
-        block = deserter.block
+    with lock:
 
-        workers = models.Terraformer.objects.filter(block=block)
-        trofast = f"{[p.player.id for p in workers]}"
-        for worker in workers:
-            if worker.player != player:
-                models.TerraformQueue(player=worker.player, block=worker.block, position=worker.position).save()
-            else:
-                print(f"{player_id} ruined it for {trofast}")
-            worker.delete()
+        if action is STOP:
+            queued, _ = models.TerraformQueue.objects.filter(player=player).delete()
+            if not models.Terraformer.objects.filter(player=player).exists():
+                if queued:
+                    print(f"{player_id} gave up the queue")
+                return False, [], 5
+            deserter = models.Terraformer.objects.get(player=player)
+            block = deserter.block
 
-        if block.position in processes:
-            processes[block.position][1].terminate()
-            processes[block.position][0].close()
-            del processes[block.position]
+            workers = models.Terraformer.objects.filter(block=block)
+            trofast = f"{[p.player.id for p in workers]}"
+            for worker in workers:
+                if worker.player != player:
+                    models.TerraformQueue(player=worker.player, block=worker.block, position=worker.position).save()
+                else:
+                    print(f"{player_id} ruined it for {trofast}")
+                worker.delete()
 
-    if block.position not in processes:
-        tools = []
-        workers = models.TerraformQueue.objects.filter(block=block)
-        if not workers.exists():
-            return False, [player.id], 5
-        print(f"Go! {[p.player.id for p in workers]}")
-        for worker in workers:
-            tools.append((worker.player.mesh, worker.position, worker.player.builder))
-            models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
-            worker.delete()
-        queue = Queue()
+            if block.position in processes:
+                processes[block.position][1].terminate()
+                processes[block.position][0].close()
+                del processes[block.position]
 
-        if block.position in optimize_processes:
-            try:
-                process_id, mesh = optimize_processes[block.position][0].get(block=False)
-                optimize_processes[block.position][1].join()
-            except Empty:
-                process_id = None
-            optimize_processes[block.position][0].close()
+        if block.position not in processes:
+            tools = []
+            workers = models.TerraformQueue.objects.filter(block=block)
+            if not workers.exists():
+                return False, [player.id], 5
+            print(f"Go! {[p.player.id for p in workers]}")
+            for worker in workers:
+                tools.append((worker.player.mesh, worker.position, worker.player.builder))
+                models.Terraformer(player=worker.player, block=worker.block, position=worker.position).save()
+                worker.delete()
+            queue = Queue()
 
-            if process_id == f'optimize({block.position})':
-                if (len(block.mesh) > len(mesh)):
-                    print(f"{block.position} compressed {len(block.mesh)=} > {len(mesh)=}")
+            if block.position in optimize_processes:
+                try:
+                    process_id, mesh = optimize_processes[block.position][0].get(block=False)
+                except Empty:
+                    process_id = None
+                optimize_processes[block.position][0].close()
+
+                if process_id == f'optimize({block.position})':
+                    print(f"{block.position} compressed before={len(block.mesh)} after={len(mesh)}")
                     block.mesh = mesh
                     block.save()
-                else:
-                    print(f"{len(block.mesh)=} < {len(mesh)=}")
-            elif process_id is not None:
-                print(f"Wrong process_id. Expected optimized({block.position}) but got {process_id}")
-            if optimize_processes[block.position][1].is_alive():
-                print("Its alive! Lets terminate")
-                optimize_processes[block.position][1].terminate()
-            print("Lets join")
-            optimize_processes[block.position][1].join()
-            if optimize_processes[block.position][1].is_alive():
-                print("Its alive! Lets kill it")
-                optimize_processes[block.position][1].kill()
-            print("Lets close")
-            optimize_processes[block.position][1].close()
-            del optimize_processes[block.position]
+                elif process_id is not None:
+                    print(f"Wrong process_id. Expected optimized({block.position}) but got {process_id}")
+                if optimize_processes[block.position][1].is_alive():
+                    print("Its alive! Lets terminate")
+                    optimize_processes[block.position][1].terminate()
+                optimize_processes[block.position][1].join(1)
+                if optimize_processes[block.position][1].is_alive():
+                    print("Its alive! Lets kill it")
+                    optimize_processes[block.position][1].kill()
+                optimize_processes[block.position][1].join()
+                print("Lets close")
+                optimize_processes[block.position][1].close()
+                del optimize_processes[block.position]
 
-        processes[block.position] = (queue, Process(target=intersect, name=f"block_{block.position}", args=(block.position, block.mesh, tools, queue), daemon=True), monotonic())
-        processes[block.position][1].start()
+            processes[block.position] = (queue, Process(target=intersect, name=f"block_{block.position}", args=(block.position, block.mesh, tools, queue), daemon=True), monotonic())
+            processes[block.position][1].start()
 
-    workers = models.Terraformer.objects.filter(block=block)
-    finishers = [p.player.id for p in workers]
-    time = processes[block.position][2]
-    try:
-        process_id, mesh = processes[block.position][0].get(block=False)
-        if process_id == block.position:
-            block.mesh = mesh
-            block.save()
-            print(f"{player_id} finished the work for {finishers}")
-        else:
-            print(f"Wrong process_id. Expected {block.position} but got {process_id}")
-        workers.delete()
-        optimize_processes[block.position] = processes[block.position]
-        del processes[block.position]
-        return True, finishers, monotonic() - time
-    except Empty:
-        return False, finishers, monotonic() - time
+        workers = models.Terraformer.objects.filter(block=block)
+        finishers = [p.player.id for p in workers]
+        time = processes[block.position][2]
+        try:
+            process_id, mesh = processes[block.position][0].get(block=False)
+            if process_id == block.position:
+                block.mesh = mesh
+                block.save()
+                print(f"{player_id} finished the work for {finishers}")
+            else:
+                print(f"Wrong process_id. Expected {block.position} but got {process_id}")
+            workers.delete()
+            optimize_processes[block.position] = processes[block.position]
+            del processes[block.position]
+            return True, finishers, monotonic() - time
+        except Empty:
+            return False, finishers, monotonic() - time

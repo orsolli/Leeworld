@@ -7,7 +7,19 @@
 
 Upload the Unity.alf file to https://license.unity3d.com/manual and get the .ulf file and save it as Unity_lic.ulf
 
-    docker build -t orjans/leeworld .
+    docker build -t orjans/leeworld:amd .
+
+### ARM64
+
+Download [arm.Dockerfile](arm.Dockerfile) to build an ARM version of the image. Replace `latest` with the desired version of leeworld
+
+    docker build -f arm.Dockerfile --build-arg TAG=amd -t orjans/leeworld:arm .
+    docker push orjans/leeworld:arm
+
+Push the arm image to the same tag by using manifest
+
+    docker manifest create orjans/leeworld:latest orjans/leeworld:amd orjans/leeworld:arm
+    docker manifest push orjans/leeworld:latest
 
 ## Setup database
 

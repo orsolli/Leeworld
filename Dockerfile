@@ -49,12 +49,13 @@ RUN /usr/bin/unity-editor -logfile - -quit -projectPath /app -executeMethod Leew
 #          Python         #
 ###########################
 
-FROM python:3.11
+FROM python:3.11-slim
 
-RUN pip install -U 'Twisted[tls,http2]'
-COPY ./Server/requirements.txt /app/
 WORKDIR /app
+
+COPY ./Server/requirements.txt /app/
 RUN pip install -r requirements.txt -U
+
 COPY Server /app
 
 COPY --from=editor /app/Build/WebGL/ /Build/WebGL/
