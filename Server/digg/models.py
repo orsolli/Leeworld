@@ -1,5 +1,5 @@
 from django.db import models
-from player.models import Player
+from player.models import *
 
 default_block_mesh = """v 0 0 0
 v 0 0 8
