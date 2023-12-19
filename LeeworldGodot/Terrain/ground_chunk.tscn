@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://b3385cukip7xb"]
+
+[ext_resource type="Script" path="res://Terrain/ChunkUpdater.gd" id="1_a3rtj"]
+[ext_resource type="Script" path="res://addons/csg_mesher/src/CSGMesher.gd" id="1_qewrq"]
+
+[node name="GroundChunk" type="Node3D"]
+
+[node name="Mesher" type="CSGCombiner3D" parent="."]
+script = ExtResource("1_qewrq")
+make = 1
+group = "Terrain"
+
+[node name="Ground" type="CSGBox3D" parent="Mesher"]
+use_collision = true
+
+[node name="subtract" type="CSGCombiner3D" parent="Mesher/Ground"]
+operation = 2
+script = ExtResource("1_a3rtj")
+isSubtract = true

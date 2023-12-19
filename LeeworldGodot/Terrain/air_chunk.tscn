@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://dcaxnqyagadg0"]
+
+[ext_resource type="Script" path="res://addons/csg_mesher/src/CSGMesher.gd" id="1_1wint"]
+[ext_resource type="Script" path="res://Terrain/ChunkUpdater.gd" id="1_bs35t"]
+
+[node name="AirChunk" type="Node3D"]
+
+[node name="Mesher" type="CSGCombiner3D" parent="."]
+script = ExtResource("1_1wint")
+make = 1
+group = "Terrain"
+
+[node name="union" type="CSGCombiner3D" parent="Mesher"]
+script = ExtResource("1_bs35t")

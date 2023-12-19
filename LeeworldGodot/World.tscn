@@ -1,0 +1,53 @@
+[gd_scene load_steps=8 format=3 uid="uid://bja065nv73enn"]
+
+[ext_resource type="Script" path="res://CharacterController.gd" id="1_1qxag"]
+[ext_resource type="Script" path="res://Terrain/TerrainRepositoryInMemory.cs" id="2_rblrs"]
+[ext_resource type="Script" path="res://ChunkSpawner.cs" id="2_trjsh"]
+[ext_resource type="Script" path="res://Spade.gd" id="5_kel7s"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_c7dit"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_neq7i"]
+albedo_color = Color(0.466667, 0.00784314, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ul0yo"]
+material = SubResource("StandardMaterial3D_neq7i")
+
+[node name="World" type="Node3D"]
+
+[node name="ChunkSpawner" type="Node" parent="." node_paths=PackedStringArray("repository")]
+script = ExtResource("2_trjsh")
+observer = NodePath("../Player")
+repository = NodePath("Repository")
+
+[node name="Repository" type="Node" parent="ChunkSpawner"]
+script = ExtResource("2_rblrs")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 4, 10, 4)
+disable_mode = 1
+input_capture_on_drag = true
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("1_1qxag")
+
+[node name="Body" type="CollisionShape3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_c7dit")
+
+[node name="Head" type="Camera3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="Ray" type="RayCast3D" parent="Player/Head"]
+transform = Transform3D(1, 0, 0, 0, -3.49691e-07, -1, 0, 8, -4.37114e-08, 0, 0, 0)
+collide_with_areas = true
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
+
+[node name="Spade" type="MeshInstance3D" parent="." node_paths=PackedStringArray("ray")]
+transform = Transform3D(-4.80825e-08, -1.1, 4.80825e-08, 0, -4.80825e-08, -1.1, 1.1, -4.80825e-08, 2.10175e-15, 0, 0, 0)
+mesh = SubResource("BoxMesh_ul0yo")
+skeleton = NodePath("../Player/Head/Ray")
+script = ExtResource("5_kel7s")
+ray = NodePath("../Player/Head/Ray")

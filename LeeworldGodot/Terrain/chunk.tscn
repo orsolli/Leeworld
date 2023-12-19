@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://cl3jblrr255vj"]
+
+[ext_resource type="Script" path="res://addons/csg_mesher/src/CSGMesher.gd" id="1_5v1st"]
+
+[node name="Chunk" type="Node3D"]
+
+[node name="union" type="CSGCombiner3D" parent="."]
+use_collision = true
+script = ExtResource("1_5v1st")
+make = 1

@@ -79,3 +79,5 @@ Unity_lic.ulf
 production_settings.py
 crt.pem
 key.pem
+
+.godot/
