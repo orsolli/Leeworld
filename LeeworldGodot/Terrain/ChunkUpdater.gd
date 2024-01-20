@@ -37,6 +37,12 @@ static func render_octree(octreeString: String, render_voxel: Callable):
 		path[-1] += 1 # Current node is evaluated.
 		while path[-1] > 8:
 			path.resize(path.size() - 1)
+			# What if it is empty? !!!
+			if path.size() == 0:
+				print("Octree string is invalid.")
+				print(octreeString)
+				print(path)
+				return
 			path[-1] += 1 # Current node is evaluated.
 		var isLeaf = octreeString[0] == '0'
 		if (isLeaf):

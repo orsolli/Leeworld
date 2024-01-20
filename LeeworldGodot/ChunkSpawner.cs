@@ -13,6 +13,10 @@ public partial class ChunkSpawner : Node
 	public NodePath observer;
 	[Export]
 	public TerrainRepositoryInMemory repository;
+	private int distance;
+	[Export]
+	public int maxDistance = 3;
+	private Vector3 previousPos;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -28,44 +32,69 @@ public partial class ChunkSpawner : Node
 			int x = Mathf.FloorToInt(o.X / 8f);
 			int y = Mathf.FloorToInt(o.Y / 8f);
 			int z = Mathf.FloorToInt(o.Z / 8f);
-			SpawnBlock(x, y - 1, z);
-
-			SpawnBlock(x + 1, y - 1, z);
-			SpawnBlock(x - 1, y - 1, z);
-
-			SpawnBlock(x, y - 1, z + 1);
-			SpawnBlock(x, y - 1, z - 1);
-
-			SpawnBlock(x + 1, y - 1, z + 1);
-			SpawnBlock(x + 1, y - 1, z - 1);
-			SpawnBlock(x - 1, y - 1, z + 1);
-			SpawnBlock(x - 1, y - 1, z - 1);
+			if (previousPos.X != x
+			 || previousPos.Y != y
+			 || previousPos.Z != z
+			)
+			{
+				distance = 1;
+			}
+			else
+			{
+				distance = (distance + 1) % maxDistance + 1;
+			}
 
 			SpawnBlock(x, y, z);
+			for (int d = 1; d <= distance; d++)
+			{
+				SpawnBlock(x, y - d, z);
+				SpawnBlock(x + d, y, z);
+				SpawnBlock(x - d, y, z);
 
-			SpawnBlock(x + 1, y, z);
-			SpawnBlock(x - 1, y, z);
+				SpawnBlock(x, y, z + d);
+				SpawnBlock(x, y, z - d);
 
-			SpawnBlock(x, y, z + 1);
-			SpawnBlock(x, y, z - 1);
+				SpawnBlock(x, y + d, z);
+			}
+			for (int d1 = 1; d1 <= distance; d1++)
+			{
+				for (int d2 = 1; d2 <= distance; d2++)
+				{
+					SpawnBlock(x + d1, y - d2, z);
+					SpawnBlock(x - d1, y - d2, z);
 
-			SpawnBlock(x + 1, y, z + 1);
-			SpawnBlock(x + 1, y, z - 1);
-			SpawnBlock(x - 1, y, z + 1);
-			SpawnBlock(x - 1, y, z - 1);
+					SpawnBlock(x, y - d1, z + d2);
+					SpawnBlock(x, y - d1, z - d2);
 
-			SpawnBlock(x, y + 1, z);
+					SpawnBlock(x + d1, y, z + d2);
+					SpawnBlock(x + d1, y, z - d2);
+					SpawnBlock(x - d1, y, z + d2);
+					SpawnBlock(x - d1, y, z - d2);
 
-			SpawnBlock(x + 1, y + 1, z);
-			SpawnBlock(x - 1, y + 1, z);
+					SpawnBlock(x + d1, y + d2, z);
+					SpawnBlock(x - d1, y + d2, z);
 
-			SpawnBlock(x, y + 1, z + 1);
-			SpawnBlock(x, y + 1, z - 1);
-
-			SpawnBlock(x + 1, y + 1, z + 1);
-			SpawnBlock(x + 1, y + 1, z - 1);
-			SpawnBlock(x - 1, y + 1, z + 1);
-			SpawnBlock(x - 1, y + 1, z - 1);
+					SpawnBlock(x, y + d1, z + d2);
+					SpawnBlock(x, y + d1, z - d2);
+				}
+			}
+			for (int d1 = distance; d1 > 0; d1--)
+			{
+				for (int d2 = distance; d2 > 0; d2--)
+				{
+					for (int d3 = distance; d3 > 0; d3--)
+					{
+						SpawnBlock(x + d1, y - d2, z + d3);
+						SpawnBlock(x + d1, y - d2, z - d3);
+						SpawnBlock(x - d1, y - d2, z + d3);
+						SpawnBlock(x - d1, y - d2, z - d3);
+						SpawnBlock(x + d1, y + d2, z + d3);
+						SpawnBlock(x + d1, y + d2, z - d3);
+						SpawnBlock(x - d1, y + d2, z + d3);
+						SpawnBlock(x - d1, y + d2, z - d3);
+					}
+				}
+			}
 		}
 	}
 
