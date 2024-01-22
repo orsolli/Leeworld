@@ -158,11 +158,11 @@ f 5//1 7//1 8//1
         Vector3 pos = previewBlock.position;
         var block_pos = pos / 8;
         var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
-        var position = $"{Int8.ToUInt8((pos.x % 8 + 8) % 8)}_{Int8.ToUInt8((pos.y % 8 + 8) % 8)}_{Int8.ToUInt8((pos.z % 8 + 8) % 8)}";
+        var position = $"{Int8.To8Adic((pos.x % 8 + 8) % 8 / 8)}_{Int8.To8Adic((pos.y % 8 + 8) % 8 / 8)}_{Int8.To8Adic((pos.z % 8 + 8) % 8 / 8)}";
         while (!stop && progress < 1)
         {
             DateTime nextPoll = DateTime.UtcNow.AddMilliseconds(100);
-            await client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block}\",\"position\":\"{position}\"}}"));
+            await client.SendText($"{{\"action\":\"digg\",\"player\":\"{server.GetPlayer()}\",\"block\":\"{block}\",\"position\":\"{position}\"}}");
             while ((nextPoll - DateTime.UtcNow).TotalMilliseconds > 0 && !stop && progress < 1)
             {
                 yield return progress;
@@ -174,7 +174,7 @@ f 5//1 7//1 8//1
     private async void StopDigg()
     {
         stop = true;
-        await client.Send(Encoding.ASCII.GetBytes($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}"));
+        await client.SendText($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}");
         Thread.Sleep(1);
     }
 }

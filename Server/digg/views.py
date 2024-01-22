@@ -1,4 +1,3 @@
-import re
 from time import sleep
 from django.http import HttpResponse, HttpRequest
 from django.views.decorators.csrf import csrf_exempt

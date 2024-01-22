@@ -92,7 +92,7 @@ f 5//1 7//1 8//1
                 Vector3 pos = dragStartPos;
                 var block_pos = pos / 8;
                 var block = $"{Mathf.FloorToInt(block_pos.x)}_{Mathf.FloorToInt(block_pos.y)}_{Mathf.FloorToInt(block_pos.z)}";
-                var position = $"{Int8.ToUInt8((pos.x % 8 + 8) % 8)}_{Int8.ToUInt8((pos.y % 8 + 8) % 8)}_{Int8.ToUInt8((pos.z % 8 + 8) % 8)}";
+                var position = $"{Int8.To8Adic((pos.x % 8 + 8) % 8 / 8)}_{Int8.To8Adic((pos.y % 8 + 8) % 8 / 8)}_{Int8.To8Adic((pos.z % 8 + 8) % 8 / 8)}";
                 var size_vec = GetSize(endPosition - dragStartPos);
                 var size = $"{Mathf.FloorToInt(size_vec.x)}_{Mathf.FloorToInt(size_vec.y)}_{Mathf.FloorToInt(size_vec.z)}";
                 var scheme = "https";

@@ -115,7 +115,7 @@ public class BlockBlueprints : MonoBehaviour
             var mesh = MeshParser.ParseOBJ(profile.mesh, 1);
 
             var block = blueprint.block.Split(',');
-            var position = Int8.FromUInt8Vector(blueprint.position.Replace(',', '_')) + 8 * new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2]));
+            var position = 8 * (Int8.From8AdicVector(blueprint.position.Replace(',', '_')) + new Vector3(int.Parse(block[0]), int.Parse(block[1]), int.Parse(block[2])));
             var size = new Vector3(blueprint.size_x, blueprint.size_y, blueprint.size_z);
 
             blueprints.Add(new BlueprintInstance(gameObject, blueprintPrefab, mesh, position, size));
