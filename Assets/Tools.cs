@@ -35,6 +35,7 @@ public class Tools : MonoBehaviour
                 if (activeTool) Destroy(activeTool);
                 activeTool = Instantiate(tools[activeToolIndex], transform);
                 activeTool.name = tools[activeToolIndex].name;
+                SendMessage("UpdateTool");
             }
         }
     }

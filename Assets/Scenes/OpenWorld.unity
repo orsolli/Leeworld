@@ -170,7 +170,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 4750821318648959531, guid: c17c92aeb71be5b73afcfaaac662c0c7, type: 3}
-  cursorTransform: {fileID: 3398520153181603658, guid: acb9b1f5b03834b70b15ba36528c20f5, type: 3}
 --- !u!114 &378737772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -440,7 +439,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2030364223}
   - component: {fileID: 2030364225}
-  - component: {fileID: 2030364224}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -463,14 +461,6 @@ Transform:
   m_Father: {fileID: 963194228}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!81 &2030364224
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2030364222}
-  m_Enabled: 1
 --- !u!20 &2030364225
 Camera:
   m_ObjectHideFlags: 0
@@ -591,7 +581,6 @@ MonoBehaviour:
   target: {fileID: 963194225}
   chunkPrefab: {fileID: 3974097394996176132, guid: f3ccf12cccd5ca3b1a939f230fd96eb9, type: 3}
   chunkRoot: {fileID: 1490979183}
-  drawDistance: 16
   memory: 10
   lastPos: {x: 4, y: 20, z: 4}
   server: {fileID: 2059282661}

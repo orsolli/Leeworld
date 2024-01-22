@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
-public class BlueprintTool : MonoBehaviour
+public class BlueprintTool : MonoBehaviour, ITool
 {
     public static string DEFAULT_MESH = @"v 0 0 0
 v 0 0 1
@@ -172,5 +172,10 @@ f 5//1 7//1 8//1
             Mathf.Round((hit.point.x - (sign * hit.normal.x / 512 + gridSize.x * 0.5f)) / gridSize.x) * gridSize.x,
             Mathf.Round((hit.point.y - (sign * hit.normal.y / 512 + gridSize.y * 0.5f)) / gridSize.y) * gridSize.y,
             Mathf.Round((hit.point.z - (sign * hit.normal.z / 512 + gridSize.z * 0.5f)) / gridSize.z) * gridSize.z);
+    }
+
+    public Vector3 GetPosition()
+    {
+        return previewBlock.transform.position;
     }
 }

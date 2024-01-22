@@ -7,7 +7,7 @@ using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class Digger : MonoBehaviour
+public class Digger : MonoBehaviour, ITool
 {
     public static string DEFAULT_MESH = @"v 0 0 0
 v 0 0 0.001
@@ -176,5 +176,10 @@ f 5//1 7//1 8//1
         stop = true;
         await client.SendText($"{{\"action\":\"stop\",\"player\":\"{server.GetPlayer()}\"}}");
         Thread.Sleep(1);
+    }
+
+    public Vector3 GetPosition()
+    {
+        return previewBlock.transform.position;
     }
 }

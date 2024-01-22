@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 public class NetworkManager : MonoBehaviour
 {
     public OtherPlayer playerPrefab;
-    public GameObject cursorTransform;
+    public ITool tool;
     private Server server;
     private WebSocket client;
     private Dictionary<string, OtherPlayer> otherPlayers = new Dictionary<string, OtherPlayer>();
@@ -19,6 +19,11 @@ public class NetworkManager : MonoBehaviour
     {
         server = FindObjectOfType<Server>(true);
         Connect();
+    }
+
+    public void UpdateTool()
+    {
+        tool = GameObject.FindWithTag("Tool").GetComponent<ITool>();
     }
 
     async void Update()
@@ -32,13 +37,16 @@ public class NetworkManager : MonoBehaviour
             lastPositionReport = position;
         }
 
-        var cursor = GetUpdate(cursorTransform.transform.position);
-        if (!lastCursorReport.Equals(cursor) && PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
+        if (tool != null)
         {
-            await client.SendText(
-                $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
-            );
-            lastCursorReport = cursor;
+            var cursor = GetUpdate(tool.GetPosition());
+            if (!lastCursorReport.Equals(cursor) && PlayerPrefs.GetString("SESSION_ACTIVE").Equals("true"))
+            {
+                await client.SendText(
+                    $"{{\"part\":\"cursor\",\"block\":\"{cursor.Split('|')[0]}\",\"position\":\"{cursor.Split('|')[1]}\"}}"
+                );
+                lastCursorReport = cursor;
+            }
         }
 #if !UNITY_WEBGL || UNITY_EDITOR
         client.DispatchMessageQueue();

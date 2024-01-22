@@ -8,7 +8,6 @@ public class ChunkSpawner : MonoBehaviour
     public GameObject target;
     public GameObject chunkPrefab;
     public Transform chunkRoot;
-    public int drawDistance = 16;
     public int memory = 128;
     public static int worldSize = 255;
     private int chunkSize = 8;
