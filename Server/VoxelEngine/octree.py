@@ -1,19 +1,26 @@
-
 class Triangle:
-    def __init__(self, vertices: tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]):
+    def __init__(
+        self,
+        vertices: tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            tuple[float, float, float],
+        ],
+    ):
         """
         Initialize a Triangle object with three vertices.
-        
+
         Args:
             vertices (tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]): The vertices of the triangle.
         """
         self.vertices = vertices
 
+
 class OctreeNode:
     def __init__(self, level: int, size: float, center: tuple[float, float, float]):
         """
         Initialize an OctreeNode object.
-        
+
         Args:
             level (int): The level of the node in the octree.
             size (float): The size of the node.
@@ -26,44 +33,64 @@ class OctreeNode:
         self.is_inside = False
         self.is_outside = False
 
-    def is_inside_mesh(self, mesh: list[tuple[tuple[float,float,float],tuple[float,float,float],tuple[float,float,float]]], point: tuple[float,float,float]) -> bool:
+    def is_inside_mesh(
+        self,
+        mesh: list[
+            tuple[
+                tuple[float, float, float],
+                tuple[float, float, float],
+                tuple[float, float, float],
+            ]
+        ],
+        point: tuple[float, float, float],
+    ) -> bool:
         """
         Check if a point is inside the mesh represented by the given list of triangles.
-        
+
         Args:
             mesh (list[tuple[tuple[float,float,float],tuple[float,float,float],tuple[float,float,float]]]): The mesh as a list of triangles.
             point (tuple[float,float,float]): The point to check.
-        
+
         Returns:
             bool: True if the point is inside the mesh, False otherwise.
         """
         ray_origin = point
-        ray_direction = (0.0039061, 0.0078122, 0.999962)  # Direction of the ray, assuming a ray along the x-axis
-        
+        ray_direction = (
+            0.0039061,
+            0.0078122,
+            0.999962,
+        )  # Direction of the ray, assuming a ray along the x-axis
+
         intersect_count = 0
-        
+
         for face in mesh:
             v0, v1, v2 = face
-            
+
             if self.is_point_on_face(v0, v1, v2, ray_origin):
                 return True
-            
+
             if self.ray_intersects_face(v0, v1, v2, ray_origin, ray_direction):
                 intersect_count += 1
-        
+
         # If the intersect count is odd, the point is inside the mesh
         return intersect_count % 2 == 1
 
-    def is_point_on_face(self, v0: tuple[float, float, float], v1: tuple[float, float, float], v2: tuple[float, float, float], point: tuple[float, float, float]) -> bool:
+    def is_point_on_face(
+        self,
+        v0: tuple[float, float, float],
+        v1: tuple[float, float, float],
+        v2: tuple[float, float, float],
+        point: tuple[float, float, float],
+    ) -> bool:
         """
         Check if a point is on the face defined by the given vertices.
-        
+
         Args:
             v0 (tuple[float, float, float]): The first vertex of the face.
             v1 (tuple[float, float, float]): The second vertex of the face.
             v2 (tuple[float, float, float]): The third vertex of the face.
             point (tuple[float, float, float]): The point to check.
-        
+
         Returns:
             bool: True if the point is on the face, False otherwise.
         """
@@ -72,11 +99,13 @@ class OctreeNode:
 
     def ray_intersects_face(self, v0, v1, v2, ray_origin, ray_direction):
         # Find the intersection point between the ray and the face plane
-        intersection = self.ray_plane_intersection(v0, v1, v2, ray_origin, ray_direction)
-        
+        intersection = self.ray_plane_intersection(
+            v0, v1, v2, ray_origin, ray_direction
+        )
+
         if intersection is None:
             return False
-        
+
         # Check if the intersection point is within the face boundaries
         return self.is_point_in_triangle(intersection, v0, v1, v2)
 
@@ -85,19 +114,19 @@ class OctreeNode:
         edge1 = self.subtract_vector(v1, v0)
         edge2 = self.subtract_vector(v2, v0)
         normal = self.cross_product(edge1, edge2)
-        
+
         denom = self.dot_product(normal, ray_direction)
-        
+
         # Check if the ray is parallel or nearly parallel to the face plane
         if abs(denom) < 1e-6:
             return None
-        
+
         t = self.dot_product(self.subtract_vector(v0, ray_origin), normal) / denom
-        
+
         # Check if the intersection point is behind the ray origin
         if t < 0:
             return None
-        
+
         return self.add_vector(ray_origin, self.scale_vector(ray_direction, t))
 
     def is_point_in_triangle(self, point, v0, v1, v2):
@@ -105,13 +134,24 @@ class OctreeNode:
         edge0 = self.subtract_vector(v1, v0)
         edge1 = self.subtract_vector(v2, v1)
         edge2 = self.subtract_vector(v0, v2)
-        
+
         normal = self.cross_product(edge0, edge1)
-        
+
         # Check if the point is on the same side of each triangle edge
-        return (self.dot_product(self.cross_product(edge0, self.subtract_vector(point, v0)), normal) >= 0 and
-                self.dot_product(self.cross_product(edge1, self.subtract_vector(point, v1)), normal) >= 0 and
-                self.dot_product(self.cross_product(edge2, self.subtract_vector(point, v2)), normal) >= 0)
+        return (
+            self.dot_product(
+                self.cross_product(edge0, self.subtract_vector(point, v0)), normal
+            )
+            >= 0
+            and self.dot_product(
+                self.cross_product(edge1, self.subtract_vector(point, v1)), normal
+            )
+            >= 0
+            and self.dot_product(
+                self.cross_product(edge2, self.subtract_vector(point, v2)), normal
+            )
+            >= 0
+        )
 
     def scale_vector(self, v1, s):
         return (v1[0] * s, v1[1] * s, v1[2] * s)
@@ -120,9 +160,11 @@ class OctreeNode:
         return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
 
     def cross_product(self, v1, v2):
-        return (v1[1] * v2[2] - v1[2] * v2[1],
-                v1[2] * v2[0] - v1[0] * v2[2],
-                v1[0] * v2[1] - v1[1] * v2[0])
+        return (
+            v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0],
+        )
 
     def subtract_vector(self, v1, v2):
         return (v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2])
@@ -131,7 +173,18 @@ class OctreeNode:
         return (v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2])
 
 
-def build_octree(mesh, level, size, center):
+def build_octree(
+    mesh: list[
+        tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            tuple[float, float, float],
+        ]
+    ],
+    level: int,
+    size: float,
+    center: tuple[float, float, float],
+):
     node = OctreeNode(level, size, center)
 
     if level == 0:
@@ -140,7 +193,7 @@ def build_octree(mesh, level, size, center):
         return node
 
     child_size = size / 2
-    child_centers = get_child_centers(center, child_size)
+    child_centers = get_child_centers(child_size, center)
 
     for i in range(8):
         child_center = child_centers[i]
@@ -157,10 +210,10 @@ def build_octree(mesh, level, size, center):
     return node
 
 
-def get_child_centers(center, size):
+def get_child_centers(size: float, center: tuple[float, float, float]):
     x, y, z = center
     half_size = size / 2
-    
+
     child_centers = [
         (x - half_size, y - half_size, z - half_size),
         (x - half_size, y - half_size, z + half_size),
@@ -169,9 +222,9 @@ def get_child_centers(center, size):
         (x + half_size, y - half_size, z - half_size),
         (x + half_size, y - half_size, z + half_size),
         (x + half_size, y + half_size, z - half_size),
-        (x + half_size, y + half_size, z + half_size)
+        (x + half_size, y + half_size, z + half_size),
     ]
-    
+
     return child_centers
 
 
@@ -185,6 +238,7 @@ def generate_octree_mesh(node: OctreeNode):
             triangles.extend(generate_octree_mesh(child))
 
     return triangles
+
 
 def create_box_triangles(bounds):
     x, y, z, size = bounds
@@ -219,3 +273,54 @@ def create_box_triangles(bounds):
     ]
 
     return box_triangles
+
+
+def parseOctree(
+    value: str, level: int, size: float, center: tuple[float, float, float]
+):
+    node = OctreeNode(level, size, center)
+    if value[0] == "1":
+        node.is_inside = value[1] == "1"
+        node.is_outside = not node.is_inside
+        return node, value[2:]
+    elif value[0] == "0":
+        node.children = []
+        child_centers = get_child_centers(size / 2, center)
+        value = value[1:]
+        for i in range(8):
+            child, value = parseOctree(value, level - 1, size / 2, child_centers[i])
+            node.children.append(child)
+    else:
+        raise ValueError()
+    return node, value
+
+
+def build_octree_fast(
+    mesh: list[
+        tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            tuple[float, float, float],
+        ]
+    ],
+    level: int,
+    size: float,
+    center: tuple[float, float, float],
+):
+    import subprocess
+
+    triangles_as_string = ""
+    for triangle in mesh:
+        triangles_as_string += (
+            " ".join(f"{v[0]} {v[1]} {v[2]}" for v in triangle) + "\n"
+        )
+
+    proc = subprocess.run(
+        ["../rust-project/target/release/rust-project"],
+        input=triangles_as_string,
+        text=True,
+        capture_output=True,
+    )
+
+    node, _ = parseOctree(proc.stdout, level, size, center)
+    return node

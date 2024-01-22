@@ -54,6 +54,11 @@ Create ssl certificate
 
     openssl req -newkey rsa:4096  -x509  -sha512  -days 365 -nodes -out crt.pem -keyout key.pem
 
+If using certbot on oracle, you might want to run the following command:
+
+    sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+    sudo netfilter-persistent save
+
 Run the server
 
     docker run \

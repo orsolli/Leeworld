@@ -1,5 +1,5 @@
 from VoxelEngine.csg import parseOBJ, parsePos, calculate_normal, CSG
-from VoxelEngine.octree import build_octree, generate_octree_mesh
+from VoxelEngine.octree import build_octree_fast, generate_octree_mesh
 
 
 def process_verts(verts):
@@ -139,3 +139,18 @@ def mesh_to_triangles(mesh: str):
     new_ground, triangles = process_cells(cells, verts)
 
     return triangles
+
+
+def mesh_to_octree(mesh: str):
+    """
+    Build octree from mesh
+
+    Args:
+        mesh (str): Main mesh.
+
+    Returns:
+        OctreeNode: Octree representation of the mesh.
+    """
+    return build_octree_fast(
+        mesh=mesh_to_triangles(mesh), level=6, size=8, center=(4, 4, 4)
+    )

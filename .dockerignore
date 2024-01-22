@@ -7,3 +7,4 @@ Server/*.pem
 .git/
 Server/*.pyc
 Server/__pycache__
+Server/rust-project/target

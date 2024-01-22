@@ -46,6 +46,18 @@ COPY ./Assets/ /app/Assets/
 RUN /usr/bin/unity-editor -logfile - -quit -projectPath /app -executeMethod Leeworld.Builder.BuildProject
 
 ###########################
+#           Rust          #
+###########################
+
+FROM rust:1.75-slim as engine
+
+WORKDIR /app
+COPY ./rust-project /app
+
+RUN cargo build --release
+RUN ls /app/target/release
+
+###########################
 #          Python         #
 ###########################
 
@@ -59,10 +71,11 @@ RUN pip install -r requirements.txt -U
 COPY Server /app
 
 COPY --from=editor /app/Build/WebGL/ /Build/WebGL/
+COPY --from=engine /app/target/release/rust-project /rust-project/target/release/rust-project
 
 # Alias to start container with default params
 RUN echo '#!/bin/bash \n\
-    ./manage.py collectstatic \n\
+    ./manage.py collectstatic --noinput \n\
     daphne LeeworldServer.asgi:application "$@"\n\
     ' > /usr/bin/leeworld \
     && chmod +x /usr/bin/leeworld
