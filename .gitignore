@@ -82,3 +82,4 @@ key.pem
 rust-project/target/
 
 .godot/
+Engine/build
