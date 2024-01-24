@@ -1,10 +1,10 @@
 extends MeshInstance3D
 
-var sign = 1
+var s = 1
 @export var digg: bool = false :
 	set (value):
 		digg = value
-		sign = -1 if digg else 1
+		s = -1 if digg else 1
 	get:
 		return digg
 
@@ -23,7 +23,7 @@ var size: float = 1.0
 func _physics_process(delta):
 	var col = ray.get_collision_point()
 	var offset = ray.get_collision_normal() / 512
-	offset *= sign
+	offset *= s
 	col = col + offset
 	var pos = Vector3(snap(col.x), snap(col.y), snap(col.z)) + Vector3.ONE * size / 2 if col != null else null
 	if pos != position:

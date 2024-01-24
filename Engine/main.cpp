@@ -1,5 +1,6 @@
 #include <iostream>
 #include "engine.hpp"
+#include "test.hpp"
 
 int main()
 {
@@ -10,6 +11,7 @@ int main()
         std::cout << "0: Quit" << std::endl;
         std::cout << "1: Read" << std::endl;
         std::cout << "2: Write" << std::endl;
+        std::cout << "3: Test" << std::endl;
         int i;
         std::cin >> i;
         if (i == 0)
@@ -43,6 +45,21 @@ int main()
             std::cin >> z;
             std::cout << std::endl
                       << engine.mutateBlock(x, y, z, level, value == 1) << std::endl;
+        }
+        else if (i == 3)
+        {
+            if (test() == 0)
+            {
+                std::cout << "All tests passed" << std::endl;
+            }
+            else
+            {
+                std::cout << "Some tests failed" << std::endl;
+            };
+        }
+        else
+        {
+            std::cout << "Invalid input" << std::endl;
         }
         std::cout << std::endl;
     }

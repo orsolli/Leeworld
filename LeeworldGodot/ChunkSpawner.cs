@@ -129,7 +129,6 @@ public partial class ChunkSpawner : Node
 				newBlock.Name = id;
 				chunk.AddChild(newBlock);
 				_chunks.Add(id, newBlock.GetPath());
-				repository.MutateOctreeBlock(0, 0, 0, new[] { 1, ((x + 8) % 8) + 1, ((z + 8) % 8) + 1, ((y + 8) % 8) + 1 }, true);
 			}
 		}
 		string octree = repository.GetOctreeBlock(x, y, z);

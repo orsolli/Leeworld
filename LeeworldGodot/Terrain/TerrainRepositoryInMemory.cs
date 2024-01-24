@@ -5,7 +5,6 @@ using System.Collections.Generic;
 public partial class TerrainRepositoryInMemory : Node
 {
 	private Godot.Collections.Dictionary<string, string> chunks = new Godot.Collections.Dictionary<string, string>(){
-		{"0_0_0","01"},
 		{"2_0_0","10110000010000000000010001000100"},
 		{"2_-1_0","10110000010000000000010001000100"},
 		{"0_2_1","10101011010101000101010101011010101010101000101"},
@@ -54,7 +53,6 @@ public partial class TerrainRepositoryInMemory : Node
 		var block_id = new Vector3(Mathf.Floor(x / 8), Mathf.Floor(y / 8), Mathf.Floor(z / 8));
 		var pos = new Vector3(x - block_id.X * 8, y - block_id.Y * 8, z - block_id.Z * 8);
 		pos /= 8;
-		pos -= Vector3.One / Mathf.Pow(2, level + 1);
 		IEnumerable<int> path = new[] { 1 };
 		for (int i = 0; i < level; i++)
 		{

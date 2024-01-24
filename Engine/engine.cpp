@@ -86,24 +86,24 @@ std::string Engine::mutateBlock(float x, float y, float z, int level, bool add)
     int Y = y / 8;
     int Z = z / 8;
 
-    std::vector<float> pos({(float)(x - X * 8) / 8 - 1 / std::pow((float)2, (float)(level + 1)),
-                            (float)(y - Y * 8) / 8 - 1 / std::pow((float)2, (float)(level + 1)),
-                            (float)(z - Z * 8) / 8 - 1 / std::pow((float)2, (float)(level + 1))});
-    std::vector<int> path;
+    std::vector<float> pos({x / 8.0f - X,
+                            y / 8.0f - Y,
+                            z / 8.0f - Z});
+    std::vector<int> path = {1};
     for (int i = 0; i < level; i++)
     {
         int index = 0;
-        if (int(pos[0]) > 0)
+        if (fmod(fmod(pos[0], 1) + 1.0f, 1) >= 0.5)
         {
             index += 1;
             pos[0] -= 1;
         }
-        if (int(pos[1]) > 0)
+        if (fmod(fmod(pos[1], 1) + 1.0f, 1) >= 0.5)
         {
             index += 2;
             pos[1] -= 1;
         }
-        if (int(pos[2]) > 0)
+        if (fmod(fmod(pos[2], 1) + 1.0f, 1) >= 0.5)
         {
             index += 4;
             pos[2] -= 1;
@@ -151,6 +151,11 @@ std::string Engine::mutateBlock(float x, float y, float z, int level, bool add)
     std::vector<int> diffPath(path.begin() + i, path.end());
     auto new_part = toOctree(diffPath, octreeString.substr(startIndex.second + 1, 1), add);
     octreeString = first_part + new_part + last_part;
+
+    if (octreeString == "10000000000000000")
+        octreeString = "00";
+    else if (octreeString == "10101010101010101")
+        octreeString = "01";
 
     chunks[std::to_string(X) + "_" + std::to_string(Y) + "_" + std::to_string(Z)] = octreeString;
     return octreeString;

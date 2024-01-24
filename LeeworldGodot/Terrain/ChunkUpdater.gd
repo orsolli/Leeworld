@@ -76,3 +76,4 @@ func update_voxel(path, isInside, instantiate_node: Callable):
 	var isOperation = (isInside != isSubtract) and hasSubsections
 	if isOperation == has_node(stringPath): return
 	if isOperation: instantiate_node.call(position, scale*2, stringPath)
+	else: remove_child(get_node(stringPath))
