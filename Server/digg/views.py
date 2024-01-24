@@ -10,12 +10,15 @@ def get_block(request: HttpRequest):
         return HttpResponse(
             "block must be three numbers separated by underscore (x_y_z)"
         )
-    block_id = "_".join([str(int(p)) for p in block_id.split("_")])
-    block, created = models.Block.objects.get_or_create(
-        defaults={"mesh": models.default_block_mesh if "-" in block_id else ""},
-        position=block_id.replace("_", ","),
+    block_id = ",".join([str(int(p)) for p in block_id.split("_")])
+
+    if not models.Block.objects.filter(position=block_id).exists():
+        return HttpResponse("01" if "-" in block_id else "00", status=200)
+
+    block = models.Block.objects.get(
+        position=block_id,
     )
-    return HttpResponse(block.mesh, status=201 if created else 200)
+    return HttpResponse(block.octree, status=200)
 
 
 @csrf_exempt

@@ -2,7 +2,7 @@ import threading
 from time import monotonic
 from django.dispatch import Signal
 from . import models
-from boolean_geometry import intersect
+from boolean_geometry import intersectOctree
 from multiprocessing import Process, Queue
 from queue import Empty
 import signal
@@ -55,9 +55,7 @@ def terraformer_signal_handler(
     block_position, position = kwargs.get("block_position"), kwargs.get("position")
     if block_position:
         block, _ = models.Block.objects.get_or_create(
-            defaults={
-                "mesh": models.default_block_mesh if "-" in block_position else ""
-            },
+            defaults={"octree": "01" if "-" in block_position else "00"},
             position=block_position,
         )
     if action is DIGG:
@@ -115,7 +113,7 @@ def terraformer_signal_handler(
             print(f"Go! {[p.player.id for p in workers]}")
             for worker in workers:
                 tools.append(
-                    (worker.player.mesh, worker.position, worker.player.builder)
+                    (worker.player.level, worker.position, worker.player.builder)
                 )
                 models.Terraformer(
                     player=worker.player, block=worker.block, position=worker.position
@@ -123,43 +121,12 @@ def terraformer_signal_handler(
                 worker.delete()
             queue = Queue()
 
-            if block.position in optimize_processes:
-                try:
-                    process_id, mesh = optimize_processes[block.position][0].get(
-                        block=False
-                    )
-                except Empty:
-                    process_id = None
-                optimize_processes[block.position][0].close()
-
-                if process_id == f"optimize({block.position})":
-                    print(
-                        f"{block.position} compressed before={len(block.mesh)} after={len(mesh)}"
-                    )
-                    block.mesh = mesh
-                    block.save()
-                elif process_id is not None:
-                    print(
-                        f"Wrong process_id. Expected optimized({block.position}) but got {process_id}"
-                    )
-                if optimize_processes[block.position][1].is_alive():
-                    print("Its alive! Lets terminate")
-                    optimize_processes[block.position][1].terminate()
-                optimize_processes[block.position][1].join(1)
-                if optimize_processes[block.position][1].is_alive():
-                    print("Its alive! Lets kill it")
-                    optimize_processes[block.position][1].kill()
-                optimize_processes[block.position][1].join()
-                print("Lets close")
-                optimize_processes[block.position][1].close()
-                del optimize_processes[block.position]
-
             processes[block.position] = (
                 queue,
                 Process(
-                    target=intersect,
+                    target=intersectOctree,
                     name=f"block_{block.position}",
-                    args=(block.position, block.mesh, tools, queue),
+                    args=(block.position, block.octree, tools, queue),
                     daemon=True,
                 ),
                 monotonic(),
@@ -170,18 +137,31 @@ def terraformer_signal_handler(
         finishers = [p.player.id for p in workers]
         time = processes[block.position][2]
         try:
-            process_id, mesh = processes[block.position][0].get(block=False)
+            process_id, octree = processes[block.position][0].get(block=False)
             if process_id == block.position:
-                block.mesh = mesh
+                block.octree = octree
                 block.save()
                 print(f"{player_id} finished the work for {finishers}")
             else:
                 print(
                     f"Wrong process_id. Expected {block.position} but got {process_id}"
                 )
-            workers.delete()
-            optimize_processes[block.position] = processes[block.position]
-            del processes[block.position]
+            try:
+                workers.delete()
+                processes[block.position][0].close()
+                if processes[block.position][1].is_alive():
+                    print("Its alive! Lets terminate")
+                    processes[block.position][1].terminate()
+                processes[block.position][1].join(1)
+                if processes[block.position][1].is_alive():
+                    print("Its alive! Lets kill it")
+                    processes[block.position][1].kill()
+                processes[block.position][1].join()
+                print("Lets close")
+                processes[block.position][1].close()
+                del processes[block.position]
+            except Exception as e:
+                print(e)
             return True, finishers, monotonic() - time
         except Empty:
             return False, finishers, monotonic() - time

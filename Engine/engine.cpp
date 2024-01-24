@@ -68,6 +68,9 @@ bool isBefore(std::vector<std::pair<int, int>> self, std::vector<int> goal, int 
     return isIndexedItemBefore && isPreviousItemsBefore;
 };
 
+Engine::Engine(std::string octree) : chunks({{"0_0_0", octree}}){};
+Engine::Engine(){};
+
 std::string Engine::getBlock(int x, int y, int z)
 {
     std::string key = std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z);

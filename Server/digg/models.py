@@ -33,7 +33,7 @@ f 5//1 7//1 8//1
 
 
 class Block(models.Model):
-    mesh = models.TextField()
+    octree = models.TextField(default="00")
     position = models.CharField(primary_key=True, max_length=100)
 
 

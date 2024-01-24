@@ -1,11 +1,64 @@
 #include <iostream>
 #include "engine.hpp"
 #include "test.hpp"
+#include <string>
+#include <string.h>
+#include <vector>
+#include <sstream>
 
-int main()
+std::vector<std::string> split(const std::string &s, char delimiter)
 {
-    Engine engine;
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
 
+int main(int argc, char *argv[])
+{
+    //  --mutate {octree} --level {level} --position {position} --build
+    // ./Engine/build/LeeworldEngine --mutate 01 --level 3 --position 0.5,0.2,0.75
+    bool interactive = true;
+    std::string octree;
+    int level;
+    float positionX;
+    float positionY;
+    float positionZ;
+    bool build;
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp("--mutate", argv[i]) == 0)
+        {
+            interactive = false;
+            octree = argv[++i];
+        }
+        if (strcmp("--level", argv[i]) == 0)
+        {
+            level = std::stoi(argv[++i]);
+        }
+        if (strcmp("--position", argv[i]) == 0)
+        {
+            std::vector<std::string> position = split(argv[++i], ',');
+            positionX = std::stof(position[0]);
+            positionY = std::stof(position[1]);
+            positionZ = std::stof(position[2]);
+        }
+        if (strcmp("--build", argv[i]) == 0)
+        {
+            build = true;
+        }
+    }
+    if (!interactive)
+    {
+        Engine engine(octree);
+        std::cout << engine.mutateBlock(positionX, positionY, positionZ, level, build) << std::endl;
+        return 0;
+    }
+    Engine engine;
     while (true)
     {
         std::cout << "0: Quit" << std::endl;

@@ -75,33 +75,7 @@ def add_blueprint(request: HttpRequest):
         return HttpResponse("Blueprint is too large")
 
     player = models.Player.objects.get(id=player_id)
-    triangles = mesh_to_triangles(player.mesh)
-
-    max_vertex = max(
-        (
-            max(
-                vertices,
-                key=lambda vertex: vertex[0] ** 2 + vertex[1] ** 2 + vertex[2] ** 2,
-            )
-            for vertices in triangles
-        ),
-        key=lambda vertex: vertex[0] ** 2 + vertex[1] ** 2 + vertex[2] ** 2,
-    )
-    min_vertex = min(
-        (
-            min(
-                vertices,
-                key=lambda vertex: vertex[0] ** 2 + vertex[1] ** 2 + vertex[2] ** 2,
-            )
-            for vertices in triangles
-        ),
-        key=lambda vertex: vertex[0] ** 2 + vertex[1] ** 2 + vertex[2] ** 2,
-    )
-    scale = (
-        max_vertex[0] - min_vertex[0],
-        max_vertex[1] - min_vertex[1],
-        max_vertex[2] - min_vertex[2],
-    )
+    scale = 1 / 2**player.level
 
     s = [
         int(size[0] / abs(size[0])) if size[0] != 0 else 1,
@@ -113,19 +87,15 @@ def add_blueprint(request: HttpRequest):
         for y in range(0, size[1] + s[1], s[1]):
             for z in range(0, size[2] + s[2], s[2]):
                 pos = f"""{
-                        position[0]+int(to8Adic(x*scale[0]/8), base=8):o},{
-                        position[1]+int(to8Adic(y*scale[1]/8), base=8):o},{
-                        position[2]+int(to8Adic(z*scale[2]/8), base=8):o}"""
+                        position[0]+int(to8Adic(x*scale), base=8):o},{
+                        position[1]+int(to8Adic(y*scale), base=8):o},{
+                        position[2]+int(to8Adic(z*scale), base=8):o}"""
                 if "-" in pos:
                     break
                 models.Blueprint.objects.create(
                     player=player,
                     block=models.Block.objects.get_or_create(
-                        defaults={
-                            "mesh": models.default_block_mesh
-                            if "-" in block_position
-                            else ""
-                        },
+                        defaults={"octree": "01" if "-" in block_position else "00"},
                         position=block_position,
                     )[0],
                     position=pos,

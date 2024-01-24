@@ -279,11 +279,11 @@ def parseOctree(
     value: str, level: int, size: float, center: tuple[float, float, float]
 ):
     node = OctreeNode(level, size, center)
-    if value[0] == "1":
+    if value[0] == "0":
         node.is_inside = value[1] == "1"
         node.is_outside = not node.is_inside
         return node, value[2:]
-    elif value[0] == "0":
+    elif value[0] == "1":
         node.children = []
         child_centers = get_child_centers(size / 2, center)
         value = value[1:]
@@ -307,6 +307,19 @@ def build_octree_fast(
     size: float,
     center: tuple[float, float, float],
 ):
+    node, _ = parseOctree(build_octree_string_fast(mesh), level, size, center)
+    return node
+
+
+def build_octree_string_fast(
+    mesh: list[
+        tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            tuple[float, float, float],
+        ]
+    ]
+):
     import subprocess
 
     triangles_as_string = ""
@@ -315,12 +328,9 @@ def build_octree_fast(
             " ".join(f"{v[0]} {v[1]} {v[2]}" for v in triangle) + "\n"
         )
 
-    proc = subprocess.run(
+    return subprocess.run(
         ["../rust-project/target/release/rust-project"],
         input=triangles_as_string,
         text=True,
         capture_output=True,
-    )
-
-    node, _ = parseOctree(proc.stdout, level, size, center)
-    return node
+    ).stdout

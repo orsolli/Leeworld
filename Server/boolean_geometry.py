@@ -1,5 +1,6 @@
 from multiprocessing import Queue
 import os
+import subprocess
 from time import sleep, monotonic
 from VoxelEngine import main
 
@@ -15,7 +16,7 @@ def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Q
         mesh (str): Main mesh.
         players (list[tuple[str, str, bool]]): list of player meshes and their properties.
             Each player tuple contains (mesh, position, build).
-            Position = 'x,y,z' 8-adics x = 10 => 1, 11 => 1 + 1/8, 27 => 2 + 7/8, 67 => 6 + 7/8, 101 => 1 + 1/64, 111 => 1 + 1/8 + 1/64.
+            Position = 'x,y,z' 8-adics big-endian x = 10 => 1/64, 11 => 1/64 + 1/8, 27 => 2/64 + 7/8, 67 => 6/64 + 7/8, 101 => 1/128 + 1/8, 111 => 1/128 + 1/64 + 1/8.
         queue (Queue): Queue to store the result of the modification task.
 
     Returns:
@@ -31,6 +32,38 @@ def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Q
     compression_result = main.compress(triangles)
     queue.put((f"optimize({id})", compression_result), timeout=10)
     return new_ground
+
+
+def intersectOctree(
+    id: str, octree: str, players: list[tuple[int, str, bool]], queue: Queue
+):
+    """
+    Perform modification between meshes and generate an octree mesh.
+
+    Args:
+        id (str): Identifier for the modification task will be passed as first element in queue when done.
+        octree (str): Main octree.
+        players (list[tuple[int, str, bool]]): list of player meshes and their properties.
+            Each player tuple contains (level, position, build).
+            Position = 'x,y,z' 8-adics big-endian x = 10 => 1/64, 11 => 1/64 + 1/8, 27 => 2/64 + 7/8, 67 => 6/64 + 7/8, 101 => 1/128 + 1/8, 111 => 1/128 + 1/64 + 1/8.
+        queue (Queue): Queue to store the result of the modification task.
+
+    Returns:
+        str: Octree string.
+    """
+    start_time = monotonic()
+    for level, position, build in players:
+        octree = subprocess.run(
+            ["../Engine/build/LeeworldEngine"],
+            input=f"--mutate {octree} --level {level} --position {position}{' --build' if build else ''}",
+            text=True,
+            capture_output=True,
+        ).stdout
+    used_time = monotonic() - start_time
+    print(f"Terraformed in {used_time}")
+    sleep(max(0, TIME - used_time - 1))
+    queue.put((id, octree), timeout=10)
+    return octree
 
 
 if __name__ == "__main__":

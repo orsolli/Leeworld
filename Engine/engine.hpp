@@ -14,6 +14,8 @@ protected:
     };*/
 
 public:
+    Engine();
+    Engine(std::string octree);
     std::string getBlock(int x, int y, int z);
     std::string mutateBlock(float x, float y, float z, int level, bool add);
 };

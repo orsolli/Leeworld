@@ -217,13 +217,13 @@ fn main() {
 
 fn serialize_octree(octree: &OctreeNode) {
     fn go_deeper(c: &[Box<OctreeNode>; 8]) {
-        print!("0");
+        print!("1");
         for i in 0..8 {
             serialize_octree(&c[i]);
         }
     }
     fn stop(octree: &OctreeNode) {
-        print!("1");
+        print!("0");
         if octree.is_inside {
             print!("1");
         } else if octree.is_outside {

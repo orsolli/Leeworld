@@ -16,9 +16,7 @@ def register(request: HttpRequest):
     count = models.Player.objects.filter(user=user).count()
     level = messages.INFO
     if count < LIMIT:
-        HttpResponse(
-            models.Player.objects.create(user=user, mesh=models.default_player_mesh).id
-        )
+        HttpResponse(models.Player.objects.create(user=user).id)
     if count == LIMIT - 1:
         level = messages.WARNING
     elif count == LIMIT:
@@ -56,7 +54,7 @@ def get_profile(id: str):
     player = models.Player.objects.get(id=id)
     return JsonResponse(
         {
-            "mesh": player.mesh,
+            "level": player.level,
             "builder": player.builder,
         }
     )
