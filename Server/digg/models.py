@@ -31,18 +31,19 @@ f 5//1 8//1 6//1
 f 5//1 7//1 8//1
 """
 
+
 class Block(models.Model):
-    mesh=models.TextField()
-    position=models.CharField(primary_key=True, max_length=100)
+    mesh = models.TextField()
+    position = models.CharField(primary_key=True, max_length=100)
 
 
 class TerraformQueue(models.Model):
-    player=models.OneToOneField(Player, primary_key=True, on_delete=models.DO_NOTHING)
-    block=models.ForeignKey(Block, on_delete=models.DO_NOTHING)
-    position=models.CharField(max_length=16)
+    player = models.OneToOneField(Player, primary_key=True, on_delete=models.DO_NOTHING)
+    block = models.ForeignKey(Block, on_delete=models.DO_NOTHING)
+    position = models.CharField(max_length=16)
 
 
 class Terraformer(models.Model):
-    player=models.OneToOneField(Player, primary_key=True, on_delete=models.DO_NOTHING)
-    block=models.ForeignKey(Block, on_delete=models.DO_NOTHING)
-    position=models.CharField(max_length=16)
+    player = models.OneToOneField(Player, primary_key=True, on_delete=models.DO_NOTHING)
+    block = models.ForeignKey(Block, on_delete=models.DO_NOTHING)
+    position = models.CharField(max_length=16)

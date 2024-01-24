@@ -5,6 +5,7 @@ from VoxelEngine import main
 
 TIME = 2
 
+
 def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Queue):
     """
     Perform modification between meshes and generate an octree mesh.
@@ -28,15 +29,19 @@ def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Q
     queue.put((id, new_ground), timeout=10)
     os.nice(19)
     compression_result = main.compress(triangles)
-    queue.put((f'optimize({id})', compression_result), timeout=10)
+    queue.put((f"optimize({id})", compression_result), timeout=10)
     return new_ground
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from VoxelEngine import main
+
     queue = Queue()
     try:
-        print(intersect('1', '''v 0 0 0
+        print(
+            intersect(
+                "1",
+                """v 0 0 0
 v 0 0 8
 v 0 8 0
 v 0 8 8
@@ -64,7 +69,10 @@ f 1//6 3//6 7//6
 f 1//6 7//6 5//6
 f 5//1 8//1 6//1
 f 5//1 7//1 8//1
-        ''', [('''v 0 0 0
+        """,
+                [
+                    (
+                        """v 0 0 0
 v 0 0 1
 v 0 1 0
 v 0 1 1
@@ -92,6 +100,13 @@ f 1//6 3//6 7//6
 f 1//6 7//6 5//6
 f 5//1 8//1 6//1
 f 5//1 7//1 8//1
-        ''', '1,1,1', False)], queue))
+        """,
+                        "1,1,1",
+                        False,
+                    )
+                ],
+                queue,
+            )
+        )
     finally:
         queue.close()

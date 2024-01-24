@@ -14,7 +14,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LeeworldServer.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "LeeworldServer.settings")
 asgi_app = get_asgi_application()
 
 import digg.routing
@@ -22,13 +22,15 @@ import player.routing
 
 application = ProtocolTypeRouter(
     {
-        'http': asgi_app,
-        'websocket': AllowedHostsOriginValidator(
+        "http": asgi_app,
+        "websocket": AllowedHostsOriginValidator(
             AuthMiddlewareStack(
-                URLRouter([
-                    *digg.routing.websocket_urlpatterns,
-                    *player.routing.websocket_urlpatterns,
-                ])
+                URLRouter(
+                    [
+                        *digg.routing.websocket_urlpatterns,
+                        *player.routing.websocket_urlpatterns,
+                    ]
+                )
             )
         ),
     }
