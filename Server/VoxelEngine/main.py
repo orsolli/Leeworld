@@ -67,7 +67,7 @@ def mutate(mesh: str, players: list[tuple[str, str, bool]]):
         mesh (str): Main mesh.
         players (list[tuple[str, str, bool]]): list of player meshes and their properties.
             player.mesh (str): The die mesh to apply to the main mesh.
-            players.position (str): The position string in the format "x,y,z". Each scalar is a little-endian number. Least significant number last. "176" means 1/8 + 7/64 + 6/128.
+            players.position (str): The position string in the format "x,y,z". Each scalar is a big-endian number. Least significant number last. "671" means 1/8 + 7/64 + 6/128.
             player.build (bool): Wether to add to mesh.
 
     Returns:
@@ -113,7 +113,7 @@ def compress(
         ]
         if len(fine_grains) == 0:
             break
-    octree = build_octree(mesh=triangles, level=i + 1, size=8, center=(4, 4, 4))
+    octree = build_octree_fast(mesh=triangles, level=i + 1, size=8, center=(4, 4, 4))
     print("Built octree")
     triangles = generate_octree_mesh(octree)
     vertices, indices = process_indices(triangles)
