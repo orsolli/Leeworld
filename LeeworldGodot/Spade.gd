@@ -20,20 +20,20 @@ var size: float = 1.0
 @export var ray: RayCast3D
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _physics_process(delta):
+func _physics_process(_delta):
 	var col = ray.get_collision_point()
 	var offset = ray.get_collision_normal() / 512
 	offset *= s
 	col = col + offset
-	var pos = Vector3(snap(col.x), snap(col.y), snap(col.z)) + Vector3.ONE * size / 2 if col != null else null
-	if pos != position:
-		position = pos
+	if col != null:
+		var pos = Vector3(snap(col.x), snap(col.y), snap(col.z)) + Vector3.ONE * size / 2
+		if pos != position:
+			position = pos
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == 1:
 		var col = ray.get_collision_point()
 		if col != null:
-			var block_id = position/8
 			var repository = get_parent().find_child("Repository")
 			repository.call_deferred(
 				"MutateBlock",

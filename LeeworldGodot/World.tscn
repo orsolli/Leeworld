@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://bja065nv73enn"]
+[gd_scene load_steps=9 format=3 uid="uid://bja065nv73enn"]
 
 [ext_resource type="Script" path="res://CharacterController.gd" id="1_1qxag"]
-[ext_resource type="Script" path="res://Terrain/TerrainRepositoryInMemory.cs" id="2_rblrs"]
+[ext_resource type="Script" path="res://Terrain/TerrainRepository.gd" id="2_r0pbk"]
 [ext_resource type="Script" path="res://ChunkSpawner.cs" id="2_trjsh"]
+[ext_resource type="Script" path="res://clients/HttpClient.gd" id="5_jbriw"]
 [ext_resource type="Script" path="res://Spade.gd" id="5_kel7s"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_c7dit"]
@@ -19,9 +20,11 @@ material = SubResource("StandardMaterial3D_neq7i")
 script = ExtResource("2_trjsh")
 observer = NodePath("../Player")
 repository = NodePath("Repository")
+maxDistance = 4
 
-[node name="Repository" type="Node" parent="ChunkSpawner"]
-script = ExtResource("2_rblrs")
+[node name="Repository" type="Node" parent="ChunkSpawner" node_paths=PackedStringArray("_http_client")]
+script = ExtResource("2_r0pbk")
+_http_client = NodePath("../../HttpClient")
 
 [node name="Player" type="CharacterBody3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 4, 10, 4)
@@ -51,3 +54,6 @@ mesh = SubResource("BoxMesh_ul0yo")
 skeleton = NodePath("../Player/Head/Ray")
 script = ExtResource("5_kel7s")
 ray = NodePath("../Player/Head/Ray")
+
+[node name="HttpClient" type="Node" parent="."]
+script = ExtResource("5_jbriw")

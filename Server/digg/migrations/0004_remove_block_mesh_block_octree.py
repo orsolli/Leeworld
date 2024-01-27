@@ -33,7 +33,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL("DELETE FROM digg_block WHERE length(mesh) <= 315;"),
+        migrations.RunSQL(
+            f"DELETE FROM digg_block WHERE length(mesh) < 315 OR (length(mesh) = 315 AND position LIKE '%-%');"
+        ),
         migrations.AddField(
             model_name="block",
             name="octree",

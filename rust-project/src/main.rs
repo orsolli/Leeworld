@@ -135,12 +135,12 @@ fn get_child_centers(center: [f64; 3], size: f64) -> [[f64; 3]; 8] {
 
     [
         [x - half_size, y - half_size, z - half_size],
-        [x - half_size, y - half_size, z + half_size],
-        [x - half_size, y + half_size, z - half_size],
-        [x - half_size, y + half_size, z + half_size],
         [x + half_size, y - half_size, z - half_size],
-        [x + half_size, y - half_size, z + half_size],
+        [x - half_size, y + half_size, z - half_size],
         [x + half_size, y + half_size, z - half_size],
+        [x - half_size, y - half_size, z + half_size],
+        [x + half_size, y - half_size, z + half_size],
+        [x - half_size, y + half_size, z + half_size],
         [x + half_size, y + half_size, z + half_size],
     ]
 }

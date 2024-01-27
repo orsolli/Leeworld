@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Threading.Tasks;
 
 public partial class ChunkSpawner : Node
 {
@@ -12,7 +13,7 @@ public partial class ChunkSpawner : Node
 	[Export]
 	public NodePath observer;
 	[Export]
-	public TerrainRepositoryInMemory repository;
+	public Node repository;
 	private int distance;
 	[Export]
 	public int maxDistance = 3;
@@ -98,7 +99,7 @@ public partial class ChunkSpawner : Node
 		}
 	}
 
-	private void SpawnBlock(int x, int y, int z)
+	private async void SpawnBlock(int x, int y, int z)
 	{
 		string superId = $"{Mathf.FloorToInt(x / 4)}_{Mathf.FloorToInt(y / 4)}_{Mathf.FloorToInt(z / 4)}";
 
@@ -131,12 +132,19 @@ public partial class ChunkSpawner : Node
 				_chunks.Add(id, newBlock.GetPath());
 			}
 		}
-		string octree = repository.GetOctreeBlock(x, y, z);
+		string octree = "";
 		if (!_cache.ContainsKey(id))
 		{
-			_cache.Add(id, octree);
+			_cache.Add(id, "placeholder");
+			Variant[] obj = await ToSignal((GodotObject)repository.Call("get_octree_block", x, y, z), "completed");
+			octree = (string)obj[0];
 		}
 		else if (_cache[id] == octree) return;
+		if (_cache[id] == "placeholder")
+		{
+			_cache.Remove(id);
+			_cache.Add(id, octree);
+		}
 
 		var block = chunk.GetNode(_chunks[id]);
 		var updaters = block.FindChildren("*", "ChunkUpdater", true, false);
