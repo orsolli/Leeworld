@@ -132,21 +132,20 @@ public partial class ChunkSpawner : Node
 				_chunks.Add(id, newBlock.GetPath());
 			}
 		}
-		string octree = "";
 		if (!_cache.ContainsKey(id))
 		{
-			_cache.Add(id, "placeholder");
+			string octree = "01";
+			_cache.Add(id, octree);
+			UpdateBlock(chunk.GetNode(_chunks[id]), octree);
 			Variant[] obj = await ToSignal((GodotObject)repository.Call("get_octree_block", x, y, z), "completed");
 			octree = (string)obj[0];
-		}
-		else if (_cache[id] == octree) return;
-		if (_cache[id] == "placeholder")
-		{
 			_cache.Remove(id);
 			_cache.Add(id, octree);
+			UpdateBlock(chunk.GetNode(_chunks[id]), octree);
 		}
-
-		var block = chunk.GetNode(_chunks[id]);
+	}
+	private void UpdateBlock(Node block, string octree)
+	{
 		var updaters = block.FindChildren("*", "ChunkUpdater", true, false);
 		foreach (Node updater in updaters)
 		{

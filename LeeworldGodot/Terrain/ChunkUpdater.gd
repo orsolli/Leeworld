@@ -18,6 +18,13 @@ var direction = PackedVector3Array([
 ])
 
 func update_block(octreeString):
+	
+	# This class does not support level 1 mods
+	if octreeString == "01" and not isSubtract:
+		octreeString = "10101010101010101"
+	elif octreeString == "00" and isSubtract:
+		octreeString = "10000000000000000"
+
 	var instantiate = func (position, size, id):
 		var newNode = box.instantiate() as Node3D
 		newNode.scale = Vector3(size, size, size)

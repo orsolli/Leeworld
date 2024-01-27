@@ -47,5 +47,6 @@ func request(path: String):
 		# Done!
 
 		var body = rb.get_string_from_ascii()
+		print(path)
 		print(body)
 		return body
