@@ -6,10 +6,13 @@
 [ext_resource type="Script" path="res://clients/HttpClient.gd" id="5_jbriw"]
 [ext_resource type="Script" path="res://Spade.gd" id="5_kel7s"]
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_c7dit"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_28df8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_neq7i"]
-albedo_color = Color(0.466667, 0.00784314, 0.2, 1)
+transparency = 1
+albedo_color = Color(0.466667, 0.00784314, 0.2, 0.552941)
+emission_enabled = true
+emission = Color(0.466667, 0.00784314, 0.2, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ul0yo"]
 material = SubResource("StandardMaterial3D_neq7i")
@@ -35,8 +38,8 @@ axis_lock_angular_z = true
 script = ExtResource("1_1qxag")
 
 [node name="Body" type="CollisionShape3D" parent="Player"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-shape = SubResource("CylinderShape3D_c7dit")
+transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_28df8")
 
 [node name="Head" type="Camera3D" parent="Player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
@@ -48,12 +51,30 @@ collide_with_areas = true
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
 
+[node name="Moon" type="DirectionalLight3D" parent="Sun"]
+transform = Transform3D(0.707107, -0.707107, -3.09086e-08, 0, -4.37114e-08, 1, -0.707107, -0.707107, -3.09086e-08, 0, 0, 0)
+light_color = Color(0.14902, 0.278431, 0.462745, 1)
+sky_mode = 1
+
+[node name="Stars" type="DirectionalLight3D" parent="Sun"]
+transform = Transform3D(0.707107, 0.707107, -3.09086e-08, 0, -4.37114e-08, -1, -0.707107, 0.707107, -3.09086e-08, 0, 0, 0)
+light_color = Color(0.454902, 0.133333, 0.184314, 1)
+sky_mode = 1
+
 [node name="Spade" type="MeshInstance3D" parent="." node_paths=PackedStringArray("ray")]
 transform = Transform3D(-4.80825e-08, -1.1, 4.80825e-08, 0, -4.80825e-08, -1.1, 1.1, -4.80825e-08, 2.10175e-15, 0, 0, 0)
 mesh = SubResource("BoxMesh_ul0yo")
 skeleton = NodePath("../Player/Head/Ray")
 script = ExtResource("5_kel7s")
+digg = true
 ray = NodePath("../Player/Head/Ray")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Spade"]
+light_color = Color(0.698039, 0.00392157, 0, 1)
+light_energy = 0.333
+distance_fade_enabled = true
+distance_fade_begin = 1.0
+distance_fade_length = 5.0
 
 [node name="HttpClient" type="Node" parent="."]
 script = ExtResource("5_jbriw")
