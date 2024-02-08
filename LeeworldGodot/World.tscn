@@ -1,12 +1,41 @@
-[gd_scene load_steps=9 format=3 uid="uid://bja065nv73enn"]
+[gd_scene load_steps=17 format=3 uid="uid://bja065nv73enn"]
 
 [ext_resource type="Script" path="res://CharacterController.gd" id="1_1qxag"]
 [ext_resource type="Script" path="res://Terrain/TerrainRepository.gd" id="2_r0pbk"]
 [ext_resource type="Script" path="res://ChunkSpawner.gd" id="2_trjsh"]
+[ext_resource type="Texture2D" uid="uid://df3trcrsnn55o" path="res://texture/rust-panel-bl/rust-panel-albedo.png" id="4_dpqau"]
+[ext_resource type="Texture2D" uid="uid://j2h1rjnslw8p" path="res://texture/rust-panel-bl/rust-panel-ao.png" id="4_txobf"]
 [ext_resource type="Script" path="res://clients/HttpClient.gd" id="5_jbriw"]
 [ext_resource type="Script" path="res://Spade.gd" id="5_kel7s"]
+[ext_resource type="Texture2D" uid="uid://cdp0ge1oa6tjv" path="res://texture/rust-panel-bl/rust-panel-metalness.png" id="5_s6a2n"]
+[ext_resource type="Texture2D" uid="uid://c51bi2j7unslt" path="res://texture/rust-panel-bl/rust-panel-normal-ogl.png" id="6_oloui"]
+[ext_resource type="Texture2D" uid="uid://byugikdkjfy3p" path="res://texture/rust-panel-bl/rust-panel-roughness.png" id="7_86vpr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_670rc"]
+albedo_texture = ExtResource("4_dpqau")
+metallic = 0.92
+metallic_specular = 0.25
+metallic_texture = ExtResource("5_s6a2n")
+roughness_texture = ExtResource("7_86vpr")
+normal_enabled = true
+normal_scale = -3.64
+normal_texture = ExtResource("6_oloui")
+ao_enabled = true
+ao_texture = ExtResource("4_txobf")
+uv1_scale = Vector3(16, 16, 16)
+uv1_offset = Vector3(0.3, -0.13, -0.3)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_ia85c"]
+flip_faces = true
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_28df8"]
+
+[sub_resource type="Environment" id="Environment_6yppa"]
+background_mode = 1
+background_color = Color(0.501961, 0.427451, 0.427451, 1)
+fog_enabled = true
+fog_light_color = Color(0.501961, 0.427451, 0.427451, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_neq7i"]
 transparency = 1
@@ -19,15 +48,22 @@ material = SubResource("StandardMaterial3D_neq7i")
 
 [node name="World" type="Node3D"]
 
-[node name="ChunkSpawner" type="Node" parent="." node_paths=PackedStringArray("repository")]
+[node name="ChunkSpawner" type="Node" parent="." node_paths=PackedStringArray("repository", "skybox")]
 script = ExtResource("2_trjsh")
 observer = NodePath("../Player")
 repository = NodePath("Repository")
 maxDistance = 4
+skybox = NodePath("Skybox")
 
 [node name="Repository" type="Node" parent="ChunkSpawner" node_paths=PackedStringArray("_http_client")]
 script = ExtResource("2_r0pbk")
 _http_client = NodePath("../../HttpClient")
+
+[node name="Skybox" type="MeshInstance3D" parent="ChunkSpawner"]
+transform = Transform3D(128.01, 0, 0, 0, 128.01, 0, 0, 0, 128.01, 2.38419e-07, 0, 0)
+material_override = SubResource("StandardMaterial3D_670rc")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_ia85c")
 
 [node name="Player" type="CharacterBody3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 4, 10, 4)
@@ -43,6 +79,7 @@ shape = SubResource("CapsuleShape3D_28df8")
 
 [node name="Head" type="Camera3D" parent="Player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+environment = SubResource("Environment_6yppa")
 
 [node name="Ray" type="RayCast3D" parent="Player/Head"]
 transform = Transform3D(1, 0, 0, 0, -3.49691e-07, -1, 0, 8, -4.37114e-08, 0, 0, 0)
@@ -50,6 +87,7 @@ collide_with_areas = true
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
+directional_shadow_mode = 0
 
 [node name="Moon" type="DirectionalLight3D" parent="Sun"]
 transform = Transform3D(0.707107, -0.707107, -3.09086e-08, 0, -4.37114e-08, 1, -0.707107, -0.707107, -3.09086e-08, 0, 0, 0)
@@ -66,7 +104,6 @@ transform = Transform3D(-4.80825e-08, -1.1, 4.80825e-08, 0, -4.80825e-08, -1.1, 
 mesh = SubResource("BoxMesh_ul0yo")
 skeleton = NodePath("../Player/Head/Ray")
 script = ExtResource("5_kel7s")
-digg = true
 ray = NodePath("../Player/Head/Ray")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Spade"]

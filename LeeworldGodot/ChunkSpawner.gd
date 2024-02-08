@@ -8,13 +8,11 @@ var _cache = {}
 var _ground: PackedScene = preload("res://Terrain/ground_chunk.tscn");
 var _air: PackedScene = preload("res://Terrain/air_chunk.tscn");
 var _chunk: PackedScene = preload("res://Terrain/chunk.tscn");
-@export
-var observer: NodePath
-@export
-var repository: Node
+@export var observer: NodePath
+@export var repository: Node
 var distance: int
-@export
-var maxDistance: int = 3
+@export var maxDistance: int = 3
+@export var skybox: Node3D
 var previousPos: Vector3
 
 # Called when the node enters the scene tree for the first time.
@@ -22,14 +20,17 @@ func _ready():
 	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(_delta):
 	var obs = get_node(observer)
 	var o = obs.position;
+	
 	var x: int = int(o.x / 8.0)
 	var y: int = int(o.y / 8.0)
 	var z: int = int(o.z / 8.0)
 	if previousPos.x != x || previousPos.y != y || previousPos.z != z:
 		distance = 1
+		previousPos = Vector3(x, y, z)
+		skybox.position = previousPos * 8
 	else:
 		distance = (distance + 1) % maxDistance + 1
 
