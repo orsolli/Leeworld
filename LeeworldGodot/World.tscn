@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://CharacterController.gd" id="1_1qxag"]
 [ext_resource type="Script" path="res://Terrain/TerrainRepository.gd" id="2_r0pbk"]
-[ext_resource type="Script" path="res://ChunkSpawner.cs" id="2_trjsh"]
+[ext_resource type="Script" path="res://ChunkSpawner.gd" id="2_trjsh"]
 [ext_resource type="Script" path="res://clients/HttpClient.gd" id="5_jbriw"]
 [ext_resource type="Script" path="res://Spade.gd" id="5_kel7s"]
 
