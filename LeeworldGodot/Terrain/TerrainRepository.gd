@@ -2,6 +2,40 @@ extends Node
 
 @export var _http_client: HttpClient
 
+var chunks = {}
+var queue_in = []
+var queue_out = []
+var routines: Semaphore
+var queue_mutex: Mutex
+
+func _ready():
+	queue_mutex = Mutex.new()
+	routines = Semaphore.new()
+	routines.post()
+	routines.post()
+	routines.post()
+	routines.post()
+	routines.post()
+
+func _process(_delta: float):
+	if len(queue_in) > 0 and routines.try_wait():
+		
+		queue_mutex.lock()
+		var pos = queue_in.pop_front()
+		if pos in queue_out:
+			queue_mutex.unlock()
+			routines.post()
+			return
+		queue_out.push_back(pos)
+		queue_mutex.unlock()
+		
+		chunks[pos] = await _http_client.request("/digg/block/?block=" + pos)
+
+		queue_mutex.lock()
+		queue_out.remove_at(queue_out.find(pos))
+		queue_mutex.unlock()
+		routines.post()
+
 func to8Adic(num: float):
 	"""
 	Convert to 8-adic number,
@@ -26,6 +60,8 @@ func to8Adic(num: float):
 	var res = ""
 	if num == 0:
 		return "0"
+	if num >= 1 or num < 0:
+		return ERR_INVALID_PARAMETER
 	var s = sign(num)
 	num = abs(num)
 	num *= 8
@@ -42,16 +78,30 @@ func to8Adic(num: float):
 	return ("-" if s < 0 else "") + res
 
 func get_octree_block(x, y, z):
-	return await _http_client.request("/digg/block/?block=" + str(x) + "_" + str(y) + "_" + str(z))
+	var pos = str(x) + "_" + str(y) + "_" + str(z)
+	if pos not in chunks and pos not in queue_in and pos not in queue_out:
+		queue_mutex.lock()
+		queue_in.append(pos)
+		queue_mutex.unlock()
+	if pos in chunks:
+		return chunks[pos]
+	return "01"
 
-func mutate_block(x, y, z, level, isInside):
+func MutateBlock(x, y, z, level, isInside):
 	var X: int = x / 8
 	var Y: int = y / 8
 	var Z: int = z / 8
 
-	var pos = to8Adic((x % 8 + 8) % 8) + "_" + to8Adic((y % 8 + 8) % 8) + "_" + to8Adic((z % 8 + 8) % 8)
+	var block = str(X) + "_" + str(Y) + "_" + str(Z)
 
-	var player = str(level)
+	var pos = to8Adic((fposmod(x, 8.0) - 0.5) / 8.0) + "_" + to8Adic((fposmod(y, 8.0) - 0.5) / 8.0) + "_" + to8Adic((fposmod(z, 8.0) - 0.5) / 8.0)
+
+	var player = "1"
 	if isInside:
-		player = "1" + str(level)
-	return await _http_client.request("/request/?player=" + player + "&block=" + X + "_" + Y + "_" + Z + "&position=" + pos)
+		player = "2"
+
+	var new_octree = "False"
+	while 'False' in new_octree:
+		new_octree = await _http_client.request("/digg/request/?player=" + player + "&block=" + block + "&position=" + pos)
+		await get_tree().create_timer(0.1, false).timeout
+	chunks.erase(block)

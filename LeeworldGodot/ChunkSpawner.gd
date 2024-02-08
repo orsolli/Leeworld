@@ -103,7 +103,8 @@ func SpawnBlock(x, y, z):
 	if !_cache.has(id):
 		_cache[id] = octree;
 		UpdateBlock(chunk.get_node(_chunks[id]), octree);
-		octree = await repository.get_octree_block(x, y, z)
+	octree = repository.get_octree_block(x, y, z)
+	if _cache[id] != octree:
 		_cache[id] = octree;
 		UpdateBlock(chunk.get_node(_chunks[id]), octree);
 

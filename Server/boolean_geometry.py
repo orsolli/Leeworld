@@ -3,8 +3,9 @@ import os
 import subprocess
 from time import sleep, monotonic
 from VoxelEngine import main
+from VoxelEngine.int8 import from8Adic
 
-TIME = 2
+TIME = 0.1
 
 
 def intersect(id: str, mesh: str, players: list[tuple[str, str, bool]], queue: Queue):
@@ -54,8 +55,16 @@ def intersectOctree(
     start_time = monotonic()
     for level, position, build in players:
         octree = subprocess.run(
-            ["../Engine/build/LeeworldEngine"],
-            input=f"--mutate {octree} --level {level} --position {position}{' --build' if build else ''}",
+            [
+                "../Engine/build/LeeworldEngine",
+                "--mutate",
+                octree,
+                "--level",
+                str(level),
+                "--position",
+                ",".join(str(from8Adic(p) * 8) for p in position.split(",")),
+                "--build" if build else "--digg",
+            ],
             text=True,
             capture_output=True,
         ).stdout

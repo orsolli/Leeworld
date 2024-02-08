@@ -44,9 +44,6 @@ def request_digg_block(request: HttpRequest):
         )
     block_position = ",".join([str(int(p)) for p in block_position.split("_")])
 
-    if not models.Block.objects.filter(position=block_position).exists():
-        return HttpResponse("Block not found")
-
     position = request.GET["position"]
     if not position.count("_") == 2:
         return HttpResponse(
