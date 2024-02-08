@@ -37,8 +37,12 @@ std::string toOctree(const std::vector<int> path, std::string existingValue, boo
         }
         octree = subtree;
     }
-
-    return "1" + octree;
+    octree = "1" + octree;
+    if (octree == "10000000000000000")
+        octree = "00";
+    else if (octree == "10101010101010101")
+        octree = "01";
+    return octree;
 };
 bool isBefore(std::vector<std::pair<int, int>> self, std::vector<int> goal, int index)
 {
