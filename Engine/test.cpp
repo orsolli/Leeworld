@@ -67,6 +67,14 @@ int test()
         return 1;
     }
     i++;
+    if (engine.mutateBlock(6.0, 4.0, 0, 2, true) != "10000000101010101")
+    {
+        std::cout << "Test " << i << " failed" << std::endl;
+        std::cout << "Output: " << std::endl
+                  << engine.getBlock(0, 0, 0) << std::endl;
+        return 1;
+    }
+    i++;
     if (engine.mutateBlock(4.0, 4.0, 0, 1, false) != "10000000001010101")
     {
         std::cout << "Test " << i << " failed" << std::endl;

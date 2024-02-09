@@ -67,7 +67,7 @@ def intersectOctree(
             ],
             text=True,
             capture_output=True,
-        ).stdout
+        ).stdout.strip()
     used_time = monotonic() - start_time
     print(f"Terraformed in {used_time}")
     sleep(max(0, TIME - used_time - 1))

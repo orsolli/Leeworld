@@ -70,10 +70,11 @@ func update_voxel(path, isInside, instantiate_node: Callable):
 		for i in path.size():
 			scale/=2
 			position += direction[path[i]-1] * scale
-		# Remove block at one level above if exist
-		var oldNode = ",".join(path.slice(0, -1))
-		if has_node(oldNode):
-			remove_child(get_node(oldNode))
+		for i in range(0, -path.size(), -1):
+			# Remove block at above levels if exist
+			var oldNode = ",".join(path.slice(0, -1+i))
+			if has_node(oldNode):
+				remove_child(get_node(oldNode))
 
 	var stringPath = ",".join(path)
 	var oldNodes = find_children(stringPath + ',*', "CSGShape3D", false, false)

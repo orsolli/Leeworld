@@ -14,6 +14,15 @@ std::vector<std::vector<int>> direction = {
     {1, 1, 1} // This order is "increment x first"
 };
 
+std::string normalizeOctree(std::string octree)
+{
+    if (octree == "10000000000000000")
+        return "00";
+    else if (octree == "10101010101010101")
+        return "01";
+    return octree;
+};
+
 std::string toOctree(const std::vector<int> path, std::string existingValue, bool isInside)
 {
     std::string cellValue = isInside ? "1" : "0";
@@ -31,17 +40,13 @@ std::string toOctree(const std::vector<int> path, std::string existingValue, boo
         for (int i = 0; i < 8; i++)
         {
             if (i + 1 == path[j])
-                subtree += "1" + octree;
+                subtree += normalizeOctree("1" + octree);
             else
                 subtree += "0" + existingValue;
         }
         octree = subtree;
     }
-    octree = "1" + octree;
-    if (octree == "10000000000000000")
-        octree = "00";
-    else if (octree == "10101010101010101")
-        octree = "01";
+    octree = normalizeOctree("1" + octree);
     return octree;
 };
 bool isBefore(std::vector<std::pair<int, int>> self, std::vector<int> goal, int index)
@@ -123,15 +128,15 @@ std::string Engine::mutateBlock(float x, float y, float z, int level, bool add)
 
     std::string octreeString = getBlock(X, Y, Z);
     std::vector<std::pair<int, int>> pathMap = {std::make_pair(1, 0)};
-    int i = 1;
+    int diffIndex = 1;
     auto startIndex = pathMap[0];
 
-    while (isBefore(pathMap, path, i))
+    while (isBefore(pathMap, path, diffIndex))
     {
-        if (i < path.size() && i < pathMap.size() && pathMap[i].first == path[i])
+        if (diffIndex < path.size() && diffIndex < pathMap.size() && pathMap[diffIndex].first == path[diffIndex])
         {
-            startIndex = pathMap[i];
-            i++;
+            startIndex = pathMap[diffIndex];
+            diffIndex++;
         }
         if (octreeString[pathMap.back().second] == '1') // If node is a branch
         {
@@ -155,15 +160,23 @@ std::string Engine::mutateBlock(float x, float y, float z, int level, bool add)
 
     auto first_part = octreeString.substr(0, startIndex.second);
     auto last_part = pathMap.size() == 1 ? "" : octreeString.substr(pathMap.back().second);
-    std::vector<int> diffPath(path.begin() + i, path.end());
+    std::vector<int> diffPath(path.begin() + diffIndex, path.end());
     auto new_part = toOctree(diffPath, octreeString.substr(startIndex.second + 1, 1), add);
-    octreeString = first_part + new_part + last_part;
+    octreeString = normalizeOctree(first_part + new_part + last_part);
 
-    if (octreeString == "10000000000000000")
-        octreeString = "00";
-    else if (octreeString == "10101010101010101")
-        octreeString = "01";
-
+    // Compress
+    for (int i = diffIndex - 1; i >= 0; i--)
+    {
+        int nodeIdx = pathMap[i].first - 1;
+        int nodeStart = pathMap[i].second - nodeIdx * 2 - 1;
+        if (nodeStart >= 0 && nodeStart + 17 < octreeString.length())
+        {
+            first_part = octreeString.substr(0, nodeStart);
+            new_part = octreeString.substr(nodeStart, 17);
+            last_part = octreeString.substr(nodeStart + 17);
+            octreeString = first_part + normalizeOctree(new_part) + last_part;
+        }
+    }
     chunks[std::to_string(X) + "_" + std::to_string(Y) + "_" + std::to_string(Z)] = octreeString;
     return octreeString;
 };

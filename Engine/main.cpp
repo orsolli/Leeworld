@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     //  --mutate {octree} --level {level} --position {position} --build
     // ./Engine/build/LeeworldEngine --mutate 01 --level 3 --position 0.5,0.2,0.75
     bool interactive = true;
-    std::string octree;
+    std::string octree = "01";
     int level;
     float positionX;
     float positionY;
@@ -34,6 +34,10 @@ int main(int argc, char *argv[])
         if (strcmp("--mutate", argv[i]) == 0)
         {
             interactive = false;
+            octree = argv[++i];
+        }
+        if (strcmp("--octree", argv[i]) == 0)
+        {
             octree = argv[++i];
         }
         if (strcmp("--level", argv[i]) == 0)
@@ -52,13 +56,12 @@ int main(int argc, char *argv[])
             build = true;
         }
     }
+    Engine engine(octree);
     if (!interactive)
     {
-        Engine engine(octree);
         std::cout << engine.mutateBlock(positionX, positionY, positionZ, level, build) << std::endl;
         return 0;
     }
-    Engine engine;
     while (true)
     {
         std::cout << "0: Quit" << std::endl;
@@ -85,7 +88,8 @@ int main(int argc, char *argv[])
         }
         else if (i == 2)
         {
-            int x, y, z, level, value;
+            std::string x, y, z;
+            int level, value;
             std::cout << "Do you want to remove(0) or add (1) a block?" << std::endl;
             std::cin >> value;
             std::cout << "At what level do you want to set a value? (1=big, 6=small)" << std::endl;
@@ -97,7 +101,7 @@ int main(int argc, char *argv[])
             std::cout << "Position along z-axis?" << std::endl;
             std::cin >> z;
             std::cout << std::endl
-                      << engine.mutateBlock(x, y, z, level, value == 1) << std::endl;
+                      << engine.mutateBlock(std::stof(x), std::stof(y), std::stof(z), level, value == 1) << std::endl;
         }
         else if (i == 3)
         {
