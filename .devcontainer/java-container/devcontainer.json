@@ -1,0 +1,23 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/java:17",
+    "features": {
+        "ghcr.io/devcontainers/features/java:1": {
+            "version": "none",
+            "installGradle": "true",
+            "installMaven": "true"
+        }
+    },
+    "workspaceFolder": "/workspaces/Leeworld/ServerJVM",
+    "forwardPorts": [ 8080 ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "git.openRepositoryInParentFolders": "always"
+            },
+            "extensions": [
+                "vscjava.vscode-gradle",
+                "mathiasfrohlich.Kotlin"
+            ]
+        }
+    }
+}
