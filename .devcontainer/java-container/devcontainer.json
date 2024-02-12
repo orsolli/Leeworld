@@ -8,7 +8,7 @@
         }
     },
     "workspaceFolder": "/workspaces/Leeworld/ServerJVM",
-    "forwardPorts": [ 8080 ],
+    "forwardPorts": [ 8000 ],
     "customizations": {
         "vscode": {
             "settings": {
