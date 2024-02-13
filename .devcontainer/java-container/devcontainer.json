@@ -12,11 +12,14 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "git.openRepositoryInParentFolders": "always"
+                "java.import.gradle.java.home": "/usr/local/sdkman/candidates/java/current",
+                "git.openRepositoryInParentFolders": "always",
+                "gradle.nestedProjects": true,
+                "remote.autoForwardPortsSource": "hybrid"
             },
             "extensions": [
-                "vscjava.vscode-gradle",
-                "mathiasfrohlich.Kotlin"
+                "fwcd.kotlin",
+                "vscjava.vscode-gradle"
             ]
         }
     }

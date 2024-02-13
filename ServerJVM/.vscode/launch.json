@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "kotlin",
+            "request": "attach",
+            "name": "Attach Tests",
+            "hostName": "localhost",
+            "port": 5005,
+            "timeout": 3000,
+            "projectRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "kotlin",
+            "request": "launch",
+            "name": "Launch Server",
+            "projectRoot": "${workspaceFolder}",
+            "mainClass": "com.leeworld.server.ServerApplicationKt",
+            "vmArguments": "-Dspring.profiles.active=dev",
+            "preLaunchTask": "gradle: assemble"
+        }
+    ]
+}

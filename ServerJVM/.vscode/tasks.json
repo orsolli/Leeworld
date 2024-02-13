@@ -1,0 +1,32 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "gradle",
+			"id": "ServerJVMtestserver",
+			"script": "test",
+			"description": "Runs the test suite.",
+			"group": "test",
+			"project": "server",
+			"buildFile": "${workspaceFolder}/build.gradle.kts",
+			"rootProject": "server",
+			"projectFolder": "${workspaceFolder}",
+			"workspaceFolder": "${workspaceFolder}",
+			"args": "${input:debug}",
+			"javaDebug": false,
+			"problemMatcher": [
+				"$gradle"
+			],
+			"label": "gradle: test"
+		}
+	],
+	"inputs": [
+		{
+			"id": "debug",
+			"options": ["--debug-jvm", ""],
+			"type": "pickString",
+			"default": "",
+			"description": "Whether to start a debuging server or just run the tests"
+		}
+	]
+}
