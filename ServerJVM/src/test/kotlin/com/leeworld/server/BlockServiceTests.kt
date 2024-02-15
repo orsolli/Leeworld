@@ -1,6 +1,6 @@
 package com.leeworld.server
 
-import com.leeworld.server.datasource.InMemoryBlockDataSource
+import com.leeworld.server.repository.InMemoryBlockRepository
 import com.leeworld.server.service.BlockService
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -9,7 +9,7 @@ internal class BlockServiceTests {
 
     @Test
     fun testGetBlock() {
-        val service = BlockService(InMemoryBlockDataSource(mutableMapOf("0_0_0" to arrayListOf(
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to arrayListOf(
             0b1010_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
@@ -25,7 +25,7 @@ internal class BlockServiceTests {
 
     @Test
     fun `can add more detail`() {
-        val service = BlockService(InMemoryBlockDataSource(mutableMapOf("0_0_0" to arrayListOf(
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to arrayListOf(
             0b1010_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
@@ -39,7 +39,7 @@ internal class BlockServiceTests {
 
     @Test
     fun `can backpropagate`() {
-        val service = BlockService(InMemoryBlockDataSource(mutableMapOf("0_0_0" to arrayListOf(
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to arrayListOf(
             0b1010_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
                 0b1000_0000_0000_0000.toShort(),
@@ -63,7 +63,7 @@ internal class BlockServiceTests {
                     0b0100_0000_0000_0000.toShort(),
                         0b0101_0101_0000_0000.toShort()
         )
-        val service = BlockService(InMemoryBlockDataSource(mutableMapOf("0_0_0" to store)))
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to store)))
         service.MutateBlock(0, 0, 0, listOf(0,0,0,0,3), true)
         assert(service.GetBlock(0,0,0) == store, { "Mutate did not add more detail" })
     }
@@ -78,7 +78,7 @@ internal class BlockServiceTests {
                     0b0100_0000_0000_0000.toShort(),
                         0b0101_0101_0001_0101.toShort()
         )
-        val service = BlockService(InMemoryBlockDataSource(mutableMapOf("0_0_0" to store)))
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to store)))
         service.MutateBlock(0, 0, 0, listOf(0,0,0,4), true)
         val newBlock = service.GetBlock(0,0,0)
         assert(newBlock.count() == 5, { "Mutate did not reduce detail" })

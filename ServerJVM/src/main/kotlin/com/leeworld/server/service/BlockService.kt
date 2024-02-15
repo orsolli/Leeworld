@@ -2,14 +2,14 @@ package com.leeworld.server.service
 
 import java.util.function.Consumer
 import org.springframework.stereotype.Service
-import com.leeworld.server.datasource.BlockDataSource
+import com.leeworld.server.repository.BlockRepository
 import com.leeworld.server.service.isLeaf
 import kotlin.collections.remove
 
 @Service
-class BlockService(private val dataSource: BlockDataSource) {
+class BlockService(private val blockRepository: BlockRepository) {
     fun GetBlock(x: Int, y: Int, z: Int, detail: Int = 0): ArrayList<Short> {
-        val octreeStream = dataSource.getBlock(x, y, z)
+        val octreeStream = blockRepository.getBlock(x, y, z)
         var nNodesInThisLevel = 1
         var nNodesInNextLevel = 0
         var level = 0
@@ -28,15 +28,14 @@ class BlockService(private val dataSource: BlockDataSource) {
                 level++
             }
         }).takeWhile { level != detail || level == 0 }
-        val liste = stream.toList()
-        println(liste)
+        stream.toList()
         stream.close()
         return result
     }
 
     fun MutateBlock(x: Int, y: Int, z: Int, path: List<Int>, value: Boolean) {
-        val octreeStream = dataSource.getBlock(x, y, z)
-        dataSource.setBlock(x, y, z, Mutate(octreeStream.toList().toMutableList(), path, value))
+        val octreeStream = blockRepository.getBlock(x, y, z)
+        blockRepository.setBlock(x, y, z, Mutate(octreeStream.toList().toMutableList(), path, value))
     }
 }
 

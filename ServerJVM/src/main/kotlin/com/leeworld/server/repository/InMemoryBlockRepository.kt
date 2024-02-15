@@ -1,15 +1,15 @@
-package com.leeworld.server.datasource
+package com.leeworld.server.repository
 
 import java.util.stream.Stream
 import org.springframework.stereotype.Repository
-import com.leeworld.server.datasource.BlockDataSource
+import com.leeworld.server.repository.BlockRepository
 
 @Repository
-class InMemoryBlockDataSource(
+class InMemoryBlockRepository(
     private val store: MutableMap<String, List<Short>> = mutableMapOf(
         "0_0_0" to arrayListOf(0b0000_0000_0000_0000.toShort())
     )
-) : BlockDataSource {
+) : BlockRepository {
 
     override fun getBlock(x: Int, y: Int, z: Int): Stream<Short> {
         val position = "${x}_${y}_${z}"
