@@ -2,7 +2,7 @@ package com.leeworld.server
 
 import com.leeworld.server.controller.BlockController
 import com.leeworld.server.service.BlockService
-import com.leeworld.server.repository.InMemoryBlockRepository
+import com.leeworld.server.repository.BlockRepository
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -12,7 +12,8 @@ import org.springframework.http.RequestEntity
 import java.net.URI
 
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = ["spring.profiles.active=test,inmemory"]
 )
 internal class BlockControllerTests {
 
@@ -20,7 +21,7 @@ internal class BlockControllerTests {
     lateinit var client: TestRestTemplate
 
     @Autowired
-    lateinit var db: InMemoryBlockRepository
+    lateinit var db: BlockRepository
 
     @Test
     fun testGetBlock() {

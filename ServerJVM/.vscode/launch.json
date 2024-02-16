@@ -19,7 +19,7 @@
             "name": "Launch Server",
             "projectRoot": "${workspaceFolder}",
             "mainClass": "com.leeworld.server.ServerApplicationKt",
-            "vmArguments": "-Dspring.profiles.active=dev",
+            "vmArguments": "-Dspring.profiles.active=dev,redis",
             "preLaunchTask": "gradle: assemble"
         }
     ]
