@@ -26,11 +26,11 @@ internal class BlockControllerTests {
     @Test
     fun testGetBlock() {
         db.setBlock(0, 0, 0, listOf(
-            0b0101_0110_0111_0100.toShort(),
-                0b0100_0000_0100_0000.toShort(),
-                0b0101_1111_0101_0000.toShort(),
-                    0b0101_0101_0101_0100.toShort(),
-                    0b0101_0101_0101_0000.toShort(),
+            0b0101_0110_0111_0100.toUShort(),
+                0b0100_0000_0100_0000.toUShort(),
+                0b0101_1111_0101_0000.toUShort(),
+                    0b0101_0101_0101_0100.toUShort(),
+                    0b0101_0101_0101_0000.toUShort(),
         ))
         var body = client.getForEntity<String>("/digg/block/{x}/{y}/{z}/1", String::class.java, "0", "0", "0").body
         assert(body == "0101011001110100", { "should return the first node" })

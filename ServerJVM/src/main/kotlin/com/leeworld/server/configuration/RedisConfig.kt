@@ -37,31 +37,31 @@ class RedisConfig {
     }
 
     @Bean
-    fun redisTemplate(): RedisTemplate<String, List<Short>> {
-        val template = RedisTemplate<String, List<Short>>()
+    fun redisTemplate(): RedisTemplate<String, List<UShort>> {
+        val template = RedisTemplate<String, List<UShort>>()
         template.setConnectionFactory(jedisConnectionFactory())
-        template.setValueSerializer(ShortListToByteRedisSerializer())
+        template.setValueSerializer(UShortListToByteRedisSerializer())
         return template
     }
 }
 
-class ShortListToByteRedisSerializer : RedisSerializer<List<Short>> {
+class UShortListToByteRedisSerializer : RedisSerializer<List<UShort>> {
 
-    override fun serialize(data: List<Short>?): ByteArray? {
+    override fun serialize(data: List<UShort>?): ByteArray? {
         return data?.let {
             ByteBuffer.allocate(data.size * java.lang.Short.BYTES)
-                .apply { data.forEach { putShort(it) } }
+                .apply { data.forEach { putShort(it.toShort()) } }
                 .array()
         }
     }
 
-    override fun deserialize(bytes: ByteArray?): List<Short>? {
+    override fun deserialize(bytes: ByteArray?): List<UShort>? {
         return bytes?.let {
             val buffer = ByteBuffer.wrap(bytes)
-            val list = mutableListOf<Short>()
+            val list = mutableListOf<UShort>()
 
             while (buffer.hasRemaining()) {
-                list.add(buffer.short)
+                list.add(buffer.short.toUShort())
             }
 
             list

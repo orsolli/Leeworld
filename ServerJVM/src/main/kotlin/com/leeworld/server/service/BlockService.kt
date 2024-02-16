@@ -7,19 +7,20 @@ import com.leeworld.server.repository.BlockRepository
 import com.leeworld.server.service.isLeaf
 import kotlin.collections.remove
 import kotlin.collections.removeAll
+import kotlin.toUShort
 
 @Service
 class BlockService(private val blockRepository: BlockRepository) {
-    fun GetBlock(x: Int, y: Int, z: Int, detail: Int = 0): ArrayList<Short> {
+    fun GetBlock(x: Int, y: Int, z: Int, detail: Int = 0): ArrayList<UShort> {
         val octreeStream = blockRepository.getBlock(x, y, z)
         var nNodesInThisLevel = 1
         var nNodesInNextLevel = 0
         var level = 0
-        val result = ArrayList<Short>()
-        val stream = octreeStream.peek({ node: Short ->
+        val result = ArrayList<UShort>()
+        val stream = octreeStream.peek({ node: UShort ->
             result.add(node)
             for (power in 1..<16 step 2) {
-                if (1.shl(power).and(node.toInt()) > 0) {
+                if (1.shl(power).toUShort().and(node) > 0.toUShort()) {
                     nNodesInNextLevel++
                 }
             }
@@ -41,7 +42,7 @@ class BlockService(private val blockRepository: BlockRepository) {
     }
 }
 
-fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Short> {
+fun Mutate(octree: List<UShort>, path: List<Int>, value: Boolean): MutableList<UShort> {
     val newOctree = octree.toMutableList()
     // Analyze
     var readCount = 0
@@ -50,8 +51,8 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
 
     val root = newOctree[pathIndexes[0]]
     if (isLeaf(root, path[0])) {
-        newOctree.set(0, 2.shl((7-path[0])*2).or(root.toInt()).toShort())
-        newOctree.add(pathIndexes[1], if (isSet(root, path[0])) 0b0101_0101_0101_0101.toShort() else 0b0000_0000_0000_0000.toShort())
+        newOctree.set(0, 2.shl((7-path[0])*2).toUShort().or(root))
+        newOctree.add(pathIndexes[1], if (isSet(root, path[0])) 0b0101_0101_0101_0101.toUShort() else 0b0000_0000_0000_0000.toUShort())
     }
     for (level in 1..<path.size) {
         val indexOfNextLevel = levelIndexes[level]
@@ -59,8 +60,8 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
 
         val oldValue = newOctree[pathIndexes[level]]
         if (isLeaf(oldValue, path[level])) {
-            newOctree.set(pathIndexes[level], 2.shl((7-path[level])*2).or(oldValue.toInt()).toShort())
-            newOctree.add(pathIndexes[level+1], if (isSet(oldValue, path[level])) 0b0101_0101_0101_0101.toShort() else 0b0000_0000_0000_0000.toShort())
+            newOctree.set(pathIndexes[level], 2.shl((7-path[level])*2).toUShort().or(oldValue))
+            newOctree.add(pathIndexes[level+1], if (isSet(oldValue, path[level])) 0b0101_0101_0101_0101.toUShort() else 0b0000_0000_0000_0000.toUShort())
         }
 
         var n = 0
@@ -77,13 +78,13 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
     var currentValue = newOctree.get(currentIndex)
     if (isSet(currentValue, path.last()) == value && numberOfNodesBefore(newOctree[pathIndexes[path.size]]) % 4 == 0) return octree.toMutableList()
     var flipper = 1.shl((7-path.last())*2)
-    var newValue = if (value) flipper.or(currentValue.toInt()) else flipper.inv().and(currentValue.toInt())
+    var newValue = if (value) flipper.toUShort().or(currentValue) else flipper.inv().toUShort().and(currentValue)
 
     // Deep clean
     val discardPile = mutableListOf<Int>()
     if (!isLeaf(currentValue, path.last())) {
         flipper = 2.shl((7-path.last())*2)
-        newValue = flipper.inv().and(newValue)
+        newValue = flipper.inv().toUShort().and(newValue)
         val stack = Stack<Int>()
         stack.push(currentIndex)
         while (stack.isNotEmpty()) {
@@ -108,7 +109,7 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
         }
     }
 
-    newOctree.set(currentIndex, newValue.toShort())
+    newOctree.set(currentIndex, newValue.toUShort())
 
     // Backpropagate
     for (p in path.size-2 downTo 1) {
@@ -124,57 +125,57 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
         val nSetInChild = numberOfSet(childValue)
 
         flipper = 1.shl((7-path[p])*2)
-        var newAncestor = if (nSetInChild >= 4) flipper.or(ancestorValue.toInt()).toShort() else flipper.inv().and(ancestorValue.toInt()).toShort()
+        var newAncestor = if (nSetInChild >= 4) flipper.toUShort().or(ancestorValue) else flipper.inv().toUShort().and(ancestorValue)
 
         // Remove detail
-        if (childValue == 0b0000_0000_0000_0000.toShort() || childValue == 0b0101_0101_0101_0101.toShort()) {
+        if (childValue == 0b0000_0000_0000_0000.toUShort() || childValue == 0b0101_0101_0101_0101.toUShort()) {
             newOctree.removeAt(childIndex)
             for (d in 0..<discardPile.size) {
                 if (discardPile[d] > childIndex) discardPile[d] -= 1
             }
             flipper =  2.shl((7-path[p])*2).inv()
-            newAncestor = flipper.and(ancestorValue.toInt()).toShort()
+            newAncestor = flipper.toUShort().and(ancestorValue)
         }
 
         newOctree.set(ancestorIndex, newAncestor)
         if (ancestorIsSet != childIsSet && ((nSetInAncestor == 4 && !childIsSet) || (nSetInAncestor == 3 && childIsSet))) continue
-        if (newAncestor == 0b0000_0000_0000_0000.toShort() || newAncestor == 0b0101_0101_0101_0101.toShort()) continue
+        if (newAncestor == 0b0000_0000_0000_0000.toUShort() || newAncestor == 0b0101_0101_0101_0101.toUShort()) continue
         break
     }
     for (d in discardPile.size-1 downTo 0) newOctree.removeAt(discardPile[d])
     return newOctree.toMutableList()
 }
 
-fun numberOfNodesBefore(node: Short, index: Int = 8): Int {
+fun numberOfNodesBefore(node: UShort, index: Int = 8): Int {
     var mask = 2 shl (8-index)*2 // 0000_0000_0000_0000_0000_0000_0000_0010
     mask = mask - 1 // 0000_0000_0000_0000_0000_0000_0000_0001
     mask = mask.inv() // 1111_1111_1111_1111_1111_1111_1111_1110
     mask = mask.and(0b1010_1010_1010_1010) // 0000_0000_0000_0000_1010_1010_1010_1010
-    var result = mask.and(node.toInt()).toString(2).filter { it == '1' }
+    var result = mask.toUShort().and(node).toString(2).filter { it == '1' }
     return result.count()
 }
-fun relativeIndexOfChild(octree: List<Short>, indexOfLevel: Int, indexOfNode: Int, index: Int): Int {
+fun relativeIndexOfChild(octree: List<UShort>, indexOfLevel: Int, indexOfNode: Int, index: Int): Int {
     var n = 0
     for (i in indexOfLevel..<indexOfNode) {
         n += numberOfNodesBefore(octree[i])
     }
     return n + numberOfNodesBefore(octree[indexOfNode], index)
 }
-fun isLeaf(node: Short, index: Int): Boolean {
+fun isLeaf(node: UShort, index: Int): Boolean {
     var mask = 2 shl (7-index)*2 // 0000_0000_0000_0000_0000_0000_0000_0010
-    var result = mask.and(node.toInt())
-    return result == 0
+    var result = mask.toUShort().and(node)
+    return result == 0.toUShort()
 }
-fun isSet(node: Short, index: Int): Boolean {
+fun isSet(node: UShort, index: Int): Boolean {
     var mask = 1 shl (7-index)*2 // 0000_0000_0000_0000_0000_0000_0000_0001
-    var result = mask.and(node.toInt())
-    return result != 0
+    var result = mask.toUShort().and(node)
+    return result != 0.toUShort()
 }
 
-fun numberOfSet(node: Short): Int {
+fun numberOfSet(node: UShort): Int {
     var mask = 0.inv() // 1111_1111_1111_1111_1111_1111_1111_1111
     mask = mask.and(0b0101_0101_0101_0101) // 0000_0000_0000_0000_0101_0101_0101_0101
-    var result = mask.and(node.toInt()).toString(2).filter { it == '1' }
+    var result = mask.toUShort().and(node).toString(2).filter { it == '1' }
     return result.count()
 }
 

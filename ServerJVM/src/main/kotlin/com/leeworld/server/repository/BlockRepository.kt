@@ -4,6 +4,6 @@ import java.util.stream.Stream
 
 interface BlockRepository {
 
-    fun getBlock(x: Int, y: Int, z: Int): Stream<Short>
-    fun setBlock(x: Int, y: Int, z: Int, newOctree: List<Short>): Unit
+    fun getBlock(x: Int, y: Int, z: Int): Stream<UShort>
+    fun setBlock(x: Int, y: Int, z: Int, newOctree: List<UShort>): Unit
 }
