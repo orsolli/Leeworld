@@ -47,7 +47,7 @@ internal class BlockServiceTests {
                     0b0100_0000_0000_0000.toShort(),
                         0b0101_0101_0000_0000.toShort()
         ))))
-        service.MutateBlock(0, 0, 0, listOf(0,0,0,0,3), false)
+        service.MutateBlock(0, 0, 0, listOf(0,0,0,3), false)
         val newBlock = service.GetBlock(0,0,0)
         assert(newBlock[3] == 0b1000_0000_0000_0000.toShort(), { "Mutate did not backpropogate" })
         assert(newBlock[1] == 0b1000_0000_0000_0000.toShort(), { "Mutate backpropogated too far" })
@@ -130,6 +130,36 @@ internal class BlockServiceTests {
                     0b1100_0000_0000_0000.toShort(),
                     0b0101_0000_0000_0000.toShort(),
                         0b0101_0101_0001_0101.toShort()
+        ))
+    }
+
+    @Test
+    fun `can compress`() {
+        val store = arrayListOf(
+            0b0000000010000000.toShort(),
+                0b1100101010000000.toShort(),
+                    0b0101010101000000.toShort(),
+                    0b0000000001000000.toShort(),
+                    0b0000110100010000.toShort(),
+                    0b0000000001000000.toShort(),
+                        0b0101010101110101.toShort(),
+                        0b0101010101011101.toShort(),
+                        0b0101010101010111.toShort(),
+                        0b0101010111010101.toShort(),
+                        0b0101010101110101.toShort(),
+                        0b0101110101010101.toShort(),
+                        0b0100010101010101.toShort(),
+        )
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to store)))
+        service.MutateBlock(0, 0, 0, listOf(4,3,2,5,6,7,4,5,2,1), true)
+        val newBlock = service.GetBlock(0,0,0)
+        assert(newBlock == arrayListOf(
+            0b0000000010000000.toShort(),
+                0b1100101010000000.toShort(),
+                    0b0101010101000000.toShort(),
+                    0b0000000001000000.toShort(),
+                    0b0000010100010000.toShort(),
+                    0b0000000001000000.toShort(),
         ))
     }
 

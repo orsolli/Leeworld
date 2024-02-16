@@ -75,7 +75,7 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
     // Mutate
     val currentIndex = pathIndexes[path.size-1]
     var currentValue = newOctree.get(currentIndex)
-    if (isSet(currentValue, path.last()) == value && isLeaf(currentValue, path.last())) return octree.toMutableList()
+    if (isSet(currentValue, path.last()) == value && numberOfNodesBefore(newOctree[pathIndexes[path.size]]) % 4 == 0) return octree.toMutableList()
     var flipper = 1.shl((7-path.last())*2)
     var newValue = if (value) flipper.or(currentValue.toInt()) else flipper.inv().and(currentValue.toInt())
 
@@ -121,9 +121,10 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
         val childIsSet = isSet(childValue, path[p+1])
 
         val nSetInAncestor = numberOfSet(ancestorValue)
+        val nSetInChild = numberOfSet(childValue)
 
         flipper = 1.shl((7-path[p])*2)
-        var newAncestor = if (nSetInAncestor >= 4) flipper.or(ancestorValue.toInt()).toShort() else flipper.inv().and(ancestorValue.toInt()).toShort()
+        var newAncestor = if (nSetInChild >= 4) flipper.or(ancestorValue.toInt()).toShort() else flipper.inv().and(ancestorValue.toInt()).toShort()
 
         // Remove detail
         if (childValue == 0b0000_0000_0000_0000.toShort() || childValue == 0b0101_0101_0101_0101.toShort()) {
@@ -137,6 +138,7 @@ fun Mutate(octree: List<Short>, path: List<Int>, value: Boolean): MutableList<Sh
 
         newOctree.set(ancestorIndex, newAncestor)
         if (ancestorIsSet != childIsSet && ((nSetInAncestor == 4 && !childIsSet) || (nSetInAncestor == 3 && childIsSet))) continue
+        if (newAncestor == 0b0000_0000_0000_0000.toShort() || newAncestor == 0b0101_0101_0101_0101.toShort()) continue
         break
     }
     for (d in discardPile.size-1 downTo 0) newOctree.removeAt(discardPile[d])
