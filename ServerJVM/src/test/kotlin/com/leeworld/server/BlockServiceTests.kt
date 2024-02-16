@@ -84,4 +84,70 @@ internal class BlockServiceTests {
         assert(newBlock.count() == 5, { "Mutate did not reduce detail" })
         assert(newBlock[3] == 0b0100_0000_0000_0000.toShort(), { "Mutate did not backpropogate correctly" })
     }
+
+    @Test
+    fun `can remove deep detail`() {
+        val store = arrayListOf(
+            0b1010_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                    0b1100_0000_0000_0000.toShort(),
+                    0b0101_1000_0000_0000.toShort(),
+                        0b0101_0101_0001_0101.toShort(),
+                        0b0000_1000_0000_0000.toShort(),
+                            0b0100_0000_0000_0000.toShort()
+        )
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to store)))
+        service.MutateBlock(0, 0, 0, listOf(1,0,2), true)
+        val newBlock = service.GetBlock(0,0,0)
+        assert(newBlock == arrayListOf(
+            0b1010_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                    0b1100_0000_0000_0000.toShort(),
+                    0b0101_0100_0000_0000.toShort(),
+                        0b0101_0101_0001_0101.toShort()
+        ))
+    }
+
+    @Test
+    fun `can mutate non-detailed node`() {
+        val store = arrayListOf(
+            0b1010_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                    0b1100_0000_0000_0000.toShort(),
+                    0b0100_0000_0000_0000.toShort(),
+                        0b0101_0101_0001_0101.toShort()
+        )
+        val service = BlockService(InMemoryBlockRepository(mutableMapOf("0_0_0" to store)))
+        service.MutateBlock(0, 0, 0, listOf(1,0,1), true)
+        val newBlock = service.GetBlock(0,0,0)
+        assert(newBlock == arrayListOf(
+            0b1010_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                0b1000_0000_0000_0000.toShort(),
+                    0b1100_0000_0000_0000.toShort(),
+                    0b0101_0000_0000_0000.toShort(),
+                        0b0101_0101_0001_0101.toShort()
+        ))
+    }
+
+    @Test
+    fun `mutate`() {
+        val service = BlockService(InMemoryBlockRepository())
+        assert(service.MutateBlock(0, 0, -1, listOf(0), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0001_0101_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(1), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0101_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(2), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0001_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3,1), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0011_0101_0101.toShort(),0b0100_0101_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3,3), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0011_0101_0101.toShort(),0b0100_0100_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3,3), true).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0011_0101_0101.toShort(),0b0100_0101_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3,3,3), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0011_0101_0101.toShort(),0b0100_0111_0101_0101.toShort(),0b0101_0100_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3,2,4), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0011_0101_0101.toShort(),0b0100_1111_0101_0101.toShort(),0b0101_0101_0001_0101.toShort(),0b0101_0100_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(3), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0000_0101_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(4), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0000_0001_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(5), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0000_0000_0101.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(6), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0000_0000_0001.toShort()))
+        assert(service.MutateBlock(0, 0, -1, listOf(7), false).let { service.GetBlock(0,0,-1) } == arrayListOf(0b0000_0000_0000_0000.toShort()))
+    }
 }
