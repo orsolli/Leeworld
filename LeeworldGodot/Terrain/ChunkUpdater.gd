@@ -20,10 +20,10 @@ var direction = PackedVector3Array([
 func update_block(octreeString):
 	
 	# This class does not support level 1 mods
-	if octreeString == "01" and not isSubtract:
-		octreeString = "10101010101010101"
-	elif octreeString == "00" and isSubtract:
-		octreeString = "10000000000000000"
+	if octreeString == "01":
+		octreeString = "0101010101010101"
+	elif octreeString == "00":
+		octreeString = "0000000000000000"
 
 	var instantiate = func (position, size, id):
 		var newNode = box.instantiate() as Node3D
@@ -32,56 +32,46 @@ func update_block(octreeString):
 		newNode.name = id
 		add_child(newNode)
 
-	ChunkUpdater.render_octree(
+	render_octree(
 		octreeString,
 		func (path, isInside): update_voxel(path, isInside, instantiate)
 	)
 
 
-static func render_octree(octreeString: String, render_voxel: Callable):
-	var path = [0]
-	while octreeString.length() > 0:
-		path[-1] += 1 # Current node is evaluated.
-		while path[-1] > 8:
-			path.resize(path.size() - 1)
-			# What if it is empty? !!!
-			if path.size() == 0:
-				print("Octree string is invalid.")
-				print(octreeString)
-				print(path)
-				return
-			path[-1] += 1 # Current node is evaluated.
-		var isLeaf = octreeString[0] == '0'
-		if (isLeaf):
-			if octreeString[1] == '1' or octreeString[1] == '0':
-				render_voxel.call(path, octreeString[1] == '1')
-			octreeString = octreeString.substr(2)
-
-		if not isLeaf:
-			path.append(0)
-			octreeString = octreeString.substr(1)
+func render_octree(octreeString: String, render_voxel: Callable):
+	var index = 0
+	var paths = [[]]
+	while (paths.size() > 0):
+		var path = paths.pop_back()
+		for i in range(8):
+			var value = octreeString[index * 16 + i*2 + 1] == '1'
+			render_voxel.call(path + [i], value)
+			var more = octreeString[index * 16 + i*2] == '1'
+			if more:
+				paths.push_front(path + [i])
+		index += 1
+		if index * 16 >= octreeString.length():
+			return
 
 
 func update_voxel(path, isInside, instantiate_node: Callable):
-	var scale = 1.0
-	var position = Vector3(scale,scale,scale) / 2
-	var hasSubsections = path.size() > 1
-	if hasSubsections:
-		for i in path.size():
-			scale/=2
-			position += direction[path[i]-1] * scale
-		for i in range(0, -path.size(), -1):
-			# Remove block at above levels if exist
-			var oldNode = ",".join(path.slice(0, -1+i))
-			if has_node(oldNode):
-				remove_child(get_node(oldNode))
+	var scale = 0.5
+	var position = Vector3(0,0,0)
+	for i in path.size():
+		scale/=2
+		position += direction[path[i]] * scale
+	for i in range(0, -path.size(), -1):
+		# Remove block at above levels if exist
+		var oldNode = ",".join(path.slice(0, -1+i))
+		if has_node(oldNode):
+			remove_child(get_node(oldNode))
 
 	var stringPath = ",".join(path)
 	var oldNodes = find_children(stringPath + ',*', "CSGShape3D", false, false)
 	for oldNode in oldNodes:
 		remove_child(oldNode)
 
-	var isOperation = (isInside != isSubtract) and hasSubsections
+	var isOperation = (isInside != isSubtract)
 	if isOperation == has_node(stringPath): return
 	if isOperation: instantiate_node.call(position, scale*2, stringPath)
 	else: remove_child(get_node(stringPath))

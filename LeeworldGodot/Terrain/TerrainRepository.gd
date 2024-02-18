@@ -29,7 +29,7 @@ func _process(_delta: float):
 		queue_out.push_back(pos)
 		queue_mutex.unlock()
 		
-		chunks[pos] = await _http_client.request("/digg/block/?block=" + pos)
+		chunks[pos] = await _http_client.request("/digg/block/" + pos + "/")
 
 		queue_mutex.lock()
 		queue_out.remove_at(queue_out.find(pos))
@@ -78,7 +78,7 @@ func to8Adic(num: float):
 	return ("-" if s < 0 else "") + res
 
 func get_octree_block(x, y, z):
-	var pos = str(x) + "_" + str(y) + "_" + str(z)
+	var pos = str(x) + "/" + str(y) + "/" + str(z)
 	if pos not in chunks and pos not in queue_in and pos not in queue_out:
 		queue_mutex.lock()
 		queue_in.append(pos)
@@ -87,21 +87,53 @@ func get_octree_block(x, y, z):
 		return chunks[pos]
 	return "01"
 
+
+func posToPath(x: float, y: float, z: float, level: int):
+	
+	# The order of this array must be according to specifications.
+	var direction = PackedVector3Array([
+		Vector3(-1,	-1,	-1),
+		Vector3(1,	-1,	-1),
+		Vector3(-1,	1,	-1),
+		Vector3(1,	1,	-1),
+		Vector3(-1,	-1,	1),
+		Vector3(1,	-1,	1),
+		Vector3(-1,	1,	1),
+		Vector3(1,	1,	1) # This order is "increment x first"
+	])
+
+	var X: int = floori(x / 8.0)
+	var Y: int = floori(y / 8.0)
+	var Z: int = floori(z / 8.0)
+
+	var pos = [x / 8.0 - X, y / 8.0 - Y, z / 8.0 - Z]
+	var path = []
+	for i in range(level):
+		var index = 0
+		if fposmod(pos[0], 1.0) >= 0.5:
+			index += 1
+			pos[0] -= 1
+		if fposmod(pos[1], 1.0) >= 0.5:
+			index += 2
+			pos[1] -= 1
+		if fposmod(pos[2], 1.0) >= 0.5:
+			index += 4
+			pos[2] -= 1
+		path.push_back(index)
+		pos[0] = pos[0] * 2 - direction[index][0]
+		pos[1] = pos[1] * 2 - direction[index][1]
+		pos[2] = pos[2] * 2 - direction[index][2]
+
+	return path
+
 func MutateBlock(x, y, z, level, isInside):
-	var X: int = x / 8
-	var Y: int = y / 8
-	var Z: int = z / 8
+	var X: int = floori(x / 8.0)
+	var Y: int = floori(y / 8.0)
+	var Z: int = floori(z / 8.0)
 
-	var block = str(X) + "_" + str(Y) + "_" + str(Z)
+	var pos = str(X) + "/" + str(Y) + "/" + str(Z)
 
-	var pos = to8Adic((fposmod(x, 8.0) - 0.5) / 8.0) + "_" + to8Adic((fposmod(y, 8.0) - 0.5) / 8.0) + "_" + to8Adic((fposmod(z, 8.0) - 0.5) / 8.0)
+	var path = posToPath(x, y, z, level)
+	var value = "1" if isInside else "0"
 
-	var player = "1"
-	if isInside:
-		player = "2"
-
-	var new_octree = "False"
-	while 'False' in new_octree:
-		new_octree = await _http_client.request("/digg/request/?player=" + player + "&block=" + block + "&position=" + pos)
-		await get_tree().create_timer(0.1, false).timeout
-	chunks.erase(block)
+	chunks[pos] = await _http_client.put("/digg/block/" + pos + "/" + value, str(path))
